@@ -4,6 +4,8 @@ Base code by civax (x: @civaxo, github: @LeanEntropy)
 
 A comprehensive, modular 3D game template for Godot that supports multiple control schemes and can be easily customized for any 3D game project.
 
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/76e1b6d8-41ca-41f4-97af-4f96a5d80af7" />
+
 
 ## Purpose
 
