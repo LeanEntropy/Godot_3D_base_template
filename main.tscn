@@ -93,4 +93,23 @@ surface_material_override/0 = SubResource("11")
 
 [node name="TankModel" parent="Player" instance=ExtResource("4_tank")]
 
+[node name="TankHull" type="MeshInstance3D" parent="Player"]
+visible = false
+
+[node name="Turret" type="Node3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+
+[node name="TurretMesh" type="MeshInstance3D" parent="Player/Turret"]
+visible = false
+
+[node name="TankGunBarrel" type="MeshInstance3D" parent="Player/Turret"]
+visible = false
+
+[node name="SpringArm3D" type="SpringArm3D" parent="Player/Turret"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+spring_length = 5.0
+
+[node name="Camera3D" type="Camera3D" parent="Player/Turret/SpringArm3D"]
+fov = 60.0
+
 [node name="UILayer" parent="." instance=ExtResource("2_abcde")]

@@ -1,5 +1,7 @@
 extends Node
 
+const DestinationMarker = preload("res://assets/destination_marker.tscn")
+
 var player
 var spring_arm
 var camera
@@ -9,12 +11,13 @@ var turret
 var turret_mesh
 var tank_hull
 var tank_gun_barrel
+var tank_model
 
 var target_position
 
 func initialize(player_node):
 	player = player_node
-	spring_arm = player.get_node("Turret/SpringArmD")
+	spring_arm = player.get_node("Turret/SpringArm3D")
 	camera = spring_arm.get_node("Camera3D")
 	player_mesh = player.get_node("PlayerMesh")
 	selection_ring = player.get_node("SelectionRing")
@@ -22,6 +25,7 @@ func initialize(player_node):
 	turret_mesh = turret.get_node("TurretMesh")
 	tank_hull = player.get_node("TankHull")
 	tank_gun_barrel = turret.get_node("TankGunBarrel")
+	tank_model = player.get_node("TankModel")
 	
 	target_position = player.global_transform.origin
 
@@ -31,6 +35,7 @@ func initialize(player_node):
 	if turret_mesh: turret_mesh.hide()
 	if tank_hull: tank_hull.hide()
 	if tank_gun_barrel: tank_gun_barrel.hide()
+	if tank_model: tank_model.hide()
 
 	# Set camera to isometric
 	spring_arm.spring_length = 20.0

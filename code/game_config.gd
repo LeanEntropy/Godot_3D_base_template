@@ -19,6 +19,7 @@ var zoom_speed
 var min_zoom
 var max_zoom
 var default_zoom
+var default_fov
 var mouse_sensitivity
 
 # Tank
@@ -42,6 +43,7 @@ func _ready():
 	min_zoom = config.get_value("physics", "min_zoom", 5.0)
 	max_zoom = config.get_value("physics", "max_zoom", 20.0)
 	default_zoom = config.get_value("physics", "default_zoom", 15.0)
+	default_fov = config.get_value("physics", "default_fov", 60.0)
 	mouse_sensitivity = config.get_value("physics", "mouse_sensitivity", 0.002)
 
 	# Tank

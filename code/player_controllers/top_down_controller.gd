@@ -9,6 +9,7 @@ var turret
 var turret_mesh
 var tank_hull
 var tank_gun_barrel
+var tank_model
 
 
 func initialize(player_node):
@@ -21,6 +22,7 @@ func initialize(player_node):
 	turret_mesh = turret.get_node("TurretMesh")
 	tank_hull = player.get_node("TankHull")
 	tank_gun_barrel = turret.get_node("TankGunBarrel")
+	tank_model = player.get_node("TankModel")
 
 	# Hide all visuals except the player capsule
 	if player_mesh: player_mesh.show()
@@ -28,6 +30,7 @@ func initialize(player_node):
 	if turret_mesh: turret_mesh.hide()
 	if tank_hull: tank_hull.hide()
 	if tank_gun_barrel: tank_gun_barrel.hide()
+	if tank_model: tank_model.hide()
 
 	# Set camera to top down
 	spring_arm.spring_length = 10.0
@@ -35,7 +38,7 @@ func initialize(player_node):
 	spring_arm.rotation.x = deg_to_rad(-70)
 	spring_arm.top_level = true
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	camera.fov = GameConfig.default_zoom
+	camera.fov = GameConfig.default_fov
 
 
 func _ready():

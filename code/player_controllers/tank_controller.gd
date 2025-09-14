@@ -9,6 +9,7 @@ var turret
 var turret_mesh
 var tank_hull
 var tank_gun_barrel
+var tank_model
 var logical_turret
 
 
@@ -16,7 +17,7 @@ func initialize(player_node):
 	player = player_node
 	
 	# Get tank model components from the TankModel instance
-	var tank_model = player.get_node("TankModel")
+	tank_model = player.get_node("TankModel")
 	turret = tank_model.get_node("Turret")
 	turret_mesh = turret.get_node("TurretMesh")
 	tank_hull = tank_model.get_node("TankHull")
@@ -24,19 +25,13 @@ func initialize(player_node):
 	player_mesh = player.get_node("PlayerMesh")
 	selection_ring = player.get_node("SelectionRing")
 	
-	# Create SpringArm3D and Camera3D programmatically
-	spring_arm = SpringArm3D.new()
-	spring_arm.name = "SpringArm3D"
-	spring_arm.spring_length = 8.0
-	spring_arm.position = Vector3(0, 0.5, 0)
-	spring_arm.top_level = false
-	turret.add_child(spring_arm)
+	# Use existing SpringArm3D and Camera3D from main scene
+	spring_arm = player.get_node("Turret/SpringArm3D")
+	camera = spring_arm.get_node("Camera3D")
 	
-	camera = Camera3D.new()
-	camera.name = "Camera3D"
-	camera.fov = 40.9
+	# Set camera properties for tank view
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	spring_arm.add_child(camera)
+	camera.fov = GameConfig.default_fov
 	
 	logical_turret = Node3D.new() # Create a new Node3D for logical turret rotation
 	player.add_child(logical_turret)
@@ -47,6 +42,7 @@ func initialize(player_node):
 	if turret_mesh: turret_mesh.show()
 	if tank_hull: tank_hull.show()
 	if tank_gun_barrel: tank_gun_barrel.show()
+	if tank_model: tank_model.show()
 
 func _ready():
 	pass
