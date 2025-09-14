@@ -1,0 +1,44 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6a8g6f8v8x8w"]
+
+[ext_resource type="Script" path="res://code/UI/ui_layer.gd" id="1_xcyvf"]
+
+[node name="UILayer" type="CanvasLayer"]
+script = ExtResource("1_xcyvf")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="PauseButton" type="Button" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+text = "Pause"
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="PauseLabel" type="Label" parent="CenterContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 128
+text = "P A U S E"
+
+[node name="StartGameContainer" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="StartGameButton" type="Button" parent="StartGameContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Start Game"
+
+[connection signal="pressed" from="MarginContainer/PauseButton" to="." method="_on_PauseButton_pressed"]
+[connection signal="pressed" from="StartGameContainer/StartGameButton" to="." method="_on_StartGameButton_pressed"]

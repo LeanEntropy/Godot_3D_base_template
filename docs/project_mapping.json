@@ -1,0 +1,614 @@
+{
+  "project_id": "3D_base_template_civ_1755555697",
+  "project_name": "3D_base_template_civ",
+  "static_structure": {
+    "scenes": [
+      {
+        "path": "main.tscn",
+        "name": "main.tscn",
+        "nodes": [
+          {
+            "name": "Main",
+            "type": "Node3D",
+            "parent": null
+          },
+          {
+            "name": "WorldEnvironment",
+            "type": "WorldEnvironment",
+            "parent": "."
+          },
+          {
+            "name": "Floor",
+            "type": "StaticBody3D",
+            "parent": "."
+          },
+          {
+            "name": "NavigationRegion3D",
+            "type": "NavigationRegion3D",
+            "parent": "Floor"
+          },
+          {
+            "name": "MeshInstance3D",
+            "type": "MeshInstance3D",
+            "parent": "Floor/NavigationRegion3D"
+          },
+          {
+            "name": "CollisionShape3D",
+            "type": "CollisionShape3D",
+            "parent": "Floor"
+          },
+          {
+            "name": "DirectionalLight3D",
+            "type": "DirectionalLight3D",
+            "parent": "."
+          },
+          {
+            "name": "SpotLight3D",
+            "type": "SpotLight3D",
+            "parent": "."
+          },
+          {
+            "name": "Player",
+            "type": "CharacterBody3D",
+            "parent": "."
+          },
+          {
+            "name": "CollisionShape3D",
+            "type": "CollisionShape3D",
+            "parent": "Player"
+          },
+          {
+            "name": "PlayerMesh",
+            "type": "MeshInstance3D",
+            "parent": "Player"
+          },
+          {
+            "name": "SelectionRing",
+            "type": "MeshInstance3D",
+            "parent": "Player"
+          },
+          {
+            "name": "TankHull",
+            "type": "MeshInstance3D",
+            "parent": "Player"
+          },
+          {
+            "name": "HeadlightLeft",
+            "type": "MeshInstance3D",
+            "parent": "Player/TankHull"
+          },
+          {
+            "name": "HeadlightRight",
+            "type": "MeshInstance3D",
+            "parent": "Player/TankHull"
+          },
+          {
+            "name": "Turret",
+            "type": "Node3D",
+            "parent": "Player"
+          },
+          {
+            "name": "TurretMesh",
+            "type": "MeshInstance3D",
+            "parent": "Player/Turret"
+          },
+          {
+            "name": "TankGunBarrel",
+            "type": "MeshInstance3D",
+            "parent": "Player/Turret"
+          },
+          {
+            "name": "SpringArm3D",
+            "type": "SpringArm3D",
+            "parent": "Player/Turret"
+          },
+          {
+            "name": "Camera3D",
+            "type": "Camera3D",
+            "parent": "Player/Turret/SpringArm3D"
+          },
+          {
+            "name": "RedBox",
+            "type": "Node",
+            "parent": "."
+          },
+          {
+            "name": "UILayer",
+            "type": "Node",
+            "parent": "."
+          }
+        ]
+      },
+      {
+        "path": "assets\\destination_marker.tscn",
+        "name": "destination_marker.tscn",
+        "nodes": [
+          {
+            "name": "DestinationMarker",
+            "type": "MeshInstance3D",
+            "parent": null
+          },
+          {
+            "name": "AnimationPlayer",
+            "type": "AnimationPlayer",
+            "parent": "."
+          }
+        ]
+      },
+      {
+        "path": "assets\\red_box.tscn",
+        "name": "red_box.tscn",
+        "nodes": [
+          {
+            "name": "RedBox",
+            "type": "RigidBody3D",
+            "parent": null
+          },
+          {
+            "name": "MeshInstance3D",
+            "type": "MeshInstance3D",
+            "parent": "."
+          },
+          {
+            "name": "CollisionShape3D",
+            "type": "CollisionShape3D",
+            "parent": "."
+          }
+        ]
+      },
+      {
+        "path": "assets\\tank_model.tscn",
+        "name": "tank_model.tscn",
+        "nodes": [
+          {
+            "name": "TankModel",
+            "type": "Node3D",
+            "parent": null
+          },
+          {
+            "name": "TankHull",
+            "type": "MeshInstance3D",
+            "parent": "."
+          },
+          {
+            "name": "HeadlightLeft",
+            "type": "MeshInstance3D",
+            "parent": "TankHull"
+          },
+          {
+            "name": "HeadlightRight",
+            "type": "MeshInstance3D",
+            "parent": "TankHull"
+          },
+          {
+            "name": "Turret",
+            "type": "Node3D",
+            "parent": "."
+          },
+          {
+            "name": "TurretMesh",
+            "type": "MeshInstance3D",
+            "parent": "Turret"
+          },
+          {
+            "name": "TankGunBarrel",
+            "type": "MeshInstance3D",
+            "parent": "Turret"
+          }
+        ]
+      },
+      {
+        "path": "assets\\UI\\ui_layer.tscn",
+        "name": "ui_layer.tscn",
+        "nodes": [
+          {
+            "name": "UILayer",
+            "type": "CanvasLayer",
+            "parent": null
+          },
+          {
+            "name": "MarginContainer",
+            "type": "MarginContainer",
+            "parent": "."
+          },
+          {
+            "name": "PauseButton",
+            "type": "Button",
+            "parent": "MarginContainer"
+          },
+          {
+            "name": "CenterContainer",
+            "type": "CenterContainer",
+            "parent": "."
+          },
+          {
+            "name": "PauseLabel",
+            "type": "Label",
+            "parent": "CenterContainer"
+          }
+        ]
+      }
+    ],
+    "scripts": [
+      {
+        "path": "code\\game_config.gd",
+        "name": "game_config.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\logger.gd",
+        "name": "logger.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controller.gd",
+        "name": "player_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_visuals_manager.gd",
+        "name": "player_visuals_manager.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\first_person_controller.gd",
+        "name": "first_person_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\free_camera_controller.gd",
+        "name": "free_camera_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\isometric_controller.gd",
+        "name": "isometric_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\over_the_shoulder_controller.gd",
+        "name": "over_the_shoulder_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\tank_controller.gd",
+        "name": "tank_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\third_person_controller.gd",
+        "name": "third_person_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\player_controllers\\top_down_controller.gd",
+        "name": "top_down_controller.gd",
+        "class_name": null
+      },
+      {
+        "path": "code\\UI\\ui_layer.gd",
+        "name": "ui_layer.gd",
+        "class_name": null
+      }
+    ],
+    "main_scene": "main.tscn",
+    "directories": [
+      "assets",
+      "code",
+      "docs",
+      "assets\\UI",
+      "code\\player_controllers",
+      "code\\UI"
+    ],
+    "node_hierarchies": {
+      "main.tscn": [
+        {
+          "name": "Main",
+          "type": "Node3D",
+          "parent": null
+        },
+        {
+          "name": "WorldEnvironment",
+          "type": "WorldEnvironment",
+          "parent": "."
+        },
+        {
+          "name": "Floor",
+          "type": "StaticBody3D",
+          "parent": "."
+        },
+        {
+          "name": "NavigationRegion3D",
+          "type": "NavigationRegion3D",
+          "parent": "Floor"
+        },
+        {
+          "name": "MeshInstance3D",
+          "type": "MeshInstance3D",
+          "parent": "Floor/NavigationRegion3D"
+        },
+        {
+          "name": "CollisionShape3D",
+          "type": "CollisionShape3D",
+          "parent": "Floor"
+        },
+        {
+          "name": "DirectionalLight3D",
+          "type": "DirectionalLight3D",
+          "parent": "."
+        },
+        {
+          "name": "SpotLight3D",
+          "type": "SpotLight3D",
+          "parent": "."
+        },
+        {
+          "name": "Player",
+          "type": "CharacterBody3D",
+          "parent": "."
+        },
+        {
+          "name": "CollisionShape3D",
+          "type": "CollisionShape3D",
+          "parent": "Player"
+        },
+        {
+          "name": "PlayerMesh",
+          "type": "MeshInstance3D",
+          "parent": "Player"
+        },
+        {
+          "name": "SelectionRing",
+          "type": "MeshInstance3D",
+          "parent": "Player"
+        },
+        {
+          "name": "TankHull",
+          "type": "MeshInstance3D",
+          "parent": "Player"
+        },
+        {
+          "name": "HeadlightLeft",
+          "type": "MeshInstance3D",
+          "parent": "Player/TankHull"
+        },
+        {
+          "name": "HeadlightRight",
+          "type": "MeshInstance3D",
+          "parent": "Player/TankHull"
+        },
+        {
+          "name": "Turret",
+          "type": "Node3D",
+          "parent": "Player"
+        },
+        {
+          "name": "TurretMesh",
+          "type": "MeshInstance3D",
+          "parent": "Player/Turret"
+        },
+        {
+          "name": "TankGunBarrel",
+          "type": "MeshInstance3D",
+          "parent": "Player/Turret"
+        },
+        {
+          "name": "SpringArm3D",
+          "type": "SpringArm3D",
+          "parent": "Player/Turret"
+        },
+        {
+          "name": "Camera3D",
+          "type": "Camera3D",
+          "parent": "Player/Turret/SpringArm3D"
+        },
+        {
+          "name": "RedBox",
+          "type": "Node",
+          "parent": "."
+        },
+        {
+          "name": "UILayer",
+          "type": "Node",
+          "parent": "."
+        }
+      ],
+      "destination_marker.tscn": [
+        {
+          "name": "DestinationMarker",
+          "type": "MeshInstance3D",
+          "parent": null
+        },
+        {
+          "name": "AnimationPlayer",
+          "type": "AnimationPlayer",
+          "parent": "."
+        }
+      ],
+      "red_box.tscn": [
+        {
+          "name": "RedBox",
+          "type": "RigidBody3D",
+          "parent": null
+        },
+        {
+          "name": "MeshInstance3D",
+          "type": "MeshInstance3D",
+          "parent": "."
+        },
+        {
+          "name": "CollisionShape3D",
+          "type": "CollisionShape3D",
+          "parent": "."
+        }
+      ],
+      "tank_model.tscn": [
+        {
+          "name": "TankModel",
+          "type": "Node3D",
+          "parent": null
+        },
+        {
+          "name": "TankHull",
+          "type": "MeshInstance3D",
+          "parent": "."
+        },
+        {
+          "name": "HeadlightLeft",
+          "type": "MeshInstance3D",
+          "parent": "TankHull"
+        },
+        {
+          "name": "HeadlightRight",
+          "type": "MeshInstance3D",
+          "parent": "TankHull"
+        },
+        {
+          "name": "Turret",
+          "type": "Node3D",
+          "parent": "."
+        },
+        {
+          "name": "TurretMesh",
+          "type": "MeshInstance3D",
+          "parent": "Turret"
+        },
+        {
+          "name": "TankGunBarrel",
+          "type": "MeshInstance3D",
+          "parent": "Turret"
+        }
+      ],
+      "ui_layer.tscn": [
+        {
+          "name": "UILayer",
+          "type": "CanvasLayer",
+          "parent": null
+        },
+        {
+          "name": "MarginContainer",
+          "type": "MarginContainer",
+          "parent": "."
+        },
+        {
+          "name": "PauseButton",
+          "type": "Button",
+          "parent": "MarginContainer"
+        },
+        {
+          "name": "CenterContainer",
+          "type": "CenterContainer",
+          "parent": "."
+        },
+        {
+          "name": "PauseLabel",
+          "type": "Label",
+          "parent": "CenterContainer"
+        }
+      ]
+    }
+  },
+  "asset_inventory": {
+    "textures": [],
+    "audio": [],
+    "scripts": [
+      "code\\game_config.gd",
+      "code\\logger.gd",
+      "code\\player_controller.gd",
+      "code\\player_visuals_manager.gd",
+      "code\\player_controllers\\first_person_controller.gd",
+      "code\\player_controllers\\free_camera_controller.gd",
+      "code\\player_controllers\\isometric_controller.gd",
+      "code\\player_controllers\\over_the_shoulder_controller.gd",
+      "code\\player_controllers\\tank_controller.gd",
+      "code\\player_controllers\\third_person_controller.gd",
+      "code\\player_controllers\\top_down_controller.gd",
+      "code\\UI\\ui_layer.gd"
+    ],
+    "scenes": [
+      "default_env.tres",
+      "main.tscn",
+      "assets\\destination_marker.tscn",
+      "assets\\red_box.tscn",
+      "assets\\tank_model.tscn",
+      "assets\\UI\\ui_layer.tscn"
+    ],
+    "other": [
+      "game_config.cfg",
+      "project.godot",
+      "code\\game_config.gd.uid",
+      "code\\logger.gd.uid",
+      "code\\player_controller.gd.uid",
+      "code\\player_visuals_manager.gd.uid",
+      "docs\\project_structure.md",
+      "code\\player_controllers\\first_person_controller.gd.uid",
+      "code\\player_controllers\\free_camera_controller.gd.uid",
+      "code\\player_controllers\\isometric_controller.gd.uid",
+      "code\\player_controllers\\over_the_shoulder_controller.gd.uid",
+      "code\\player_controllers\\tank_controller.gd.uid",
+      "code\\player_controllers\\third_person_controller.gd.uid",
+      "code\\player_controllers\\top_down_controller.gd.uid",
+      "code\\UI\\ui_layer.gd.uid"
+    ]
+  },
+  "script_dependencies": {
+    "game_config.gd": [
+      "extends:Node"
+    ],
+    "logger.gd": [
+      "extends:Node"
+    ],
+    "player_controller.gd": [
+      "extends:CharacterBody3D",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/first_person_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/third_person_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/over_the_shoulder_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/top_down_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/isometric_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/free_camera_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/tank_controller.gd\").new()",
+      "load:\t\t\tcurrent_controller = load(\"res://code/player_controllers/first_person_controller.gd\").new()"
+    ],
+    "player_visuals_manager.gd": [
+      "extends:Node"
+    ],
+    "first_person_controller.gd": [
+      "extends:Node"
+    ],
+    "free_camera_controller.gd": [
+      "extends:Node"
+    ],
+    "isometric_controller.gd": [
+      "extends:Node"
+    ],
+    "over_the_shoulder_controller.gd": [
+      "extends:Node"
+    ],
+    "tank_controller.gd": [
+      "extends:Node"
+    ],
+    "third_person_controller.gd": [
+      "extends:Node"
+    ],
+    "top_down_controller.gd": [
+      "extends:Node"
+    ],
+    "ui_layer.gd": [
+      "extends:CanvasLayer"
+    ]
+  },
+  "baseline_tags": [
+    "scripted",
+    "multi-scene",
+    "medium"
+  ],
+  "semantic_tags": {
+    "theme": "exploration",
+    "mechanics": "grid-based movement",
+    "art_style": "pixel art",
+    "complexity": "beginner-friendly"
+  },
+  "last_full_scan": 1755555697.7817314,
+  "last_incremental_update": 1755555697.7817314,
+  "version": "1.0"
+}

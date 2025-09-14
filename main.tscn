@@ -1,0 +1,96 @@
+[gd_scene load_steps=16 format=3 uid="uid://bnkcsqjtokxh6"]
+
+[ext_resource type="Script" uid="uid://cknif7bnpg03r" path="res://code/player_controller.gd" id="1_dax7f"]
+[ext_resource type="PackedScene" uid="uid://c6a8g6f8v8x8w" path="res://assets/UI/ui_layer.tscn" id="2_abcde"]
+[ext_resource type="PackedScene" uid="uid://b1h2w3x4y506" path="res://assets/red_box.tscn" id="3_defgh"]
+[ext_resource type="PackedScene" uid="uid://clg5wi6nllxjw" path="res://assets/tank_model.tscn" id="4_tank"]
+
+[sub_resource type="ProceduralSkyMaterial" id="6"]
+sky_top_color = Color(0.317647, 0.705882, 0.94902, 1)
+sky_horizon_color = Color(0.647059, 0.823529, 0.941176, 1)
+
+[sub_resource type="Sky" id="4"]
+sky_material = SubResource("6")
+
+[sub_resource type="Environment" id="5"]
+background_mode = 2
+sky = SubResource("4")
+ambient_light_color = Color(0.4, 0.4, 0.4, 1)
+ambient_light_energy = 0.5
+
+[sub_resource type="StandardMaterial3D" id="3"]
+albedo_color = Color(1, 0.47451, 0, 1)
+
+[sub_resource type="PlaneMesh" id="1"]
+size = Vector2(1000, 1000)
+
+[sub_resource type="BoxShape3D" id="2"]
+size = Vector3(1000, 2, 1000)
+
+[sub_resource type="CapsuleShape3D" id="7"]
+
+[sub_resource type="CapsuleMesh" id="8"]
+
+[sub_resource type="StandardMaterial3D" id="9"]
+
+[sub_resource type="CylinderMesh" id="10"]
+top_radius = 0.7
+bottom_radius = 0.7
+height = 0.05
+
+[sub_resource type="StandardMaterial3D" id="11"]
+albedo_color = Color(0, 1, 0, 1)
+emission_enabled = true
+emission = Color(0, 1, 0, 1)
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("5")
+
+[node name="RedBox" parent="WorldEnvironment" instance=ExtResource("3_defgh")]
+transform = Transform3D(0.925732, 0, -0.37818, 0, 1, 0, 0.37818, 0, 0.925732, -4.37328, 1, -14.0541)
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="Floor"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor/NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+material_override = SubResource("3")
+mesh = SubResource("1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 10, 0)
+shadow_enabled = true
+
+[node name="SpotLight3D" type="SpotLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 192.266, 0)
+light_energy = 3.0
+light_size = 1.0
+shadow_enabled = true
+spot_range = 275.757
+
+[node name="Player" type="CharacterBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+script = ExtResource("1_dax7f")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("7")
+
+[node name="PlayerMesh" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("8")
+surface_material_override/0 = SubResource("9")
+
+[node name="SelectionRing" type="MeshInstance3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0)
+mesh = SubResource("10")
+surface_material_override/0 = SubResource("11")
+
+[node name="TankModel" parent="Player" instance=ExtResource("4_tank")]
+
+[node name="UILayer" parent="." instance=ExtResource("2_abcde")]
