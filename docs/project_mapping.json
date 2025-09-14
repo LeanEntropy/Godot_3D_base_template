@@ -18,6 +18,11 @@
             "parent": "."
           },
           {
+            "name": "RedBox",
+            "type": "Node",
+            "parent": "WorldEnvironment"
+          },
+          {
             "name": "Floor",
             "type": "StaticBody3D",
             "parent": "."
@@ -68,49 +73,9 @@
             "parent": "Player"
           },
           {
-            "name": "TankHull",
-            "type": "MeshInstance3D",
-            "parent": "Player"
-          },
-          {
-            "name": "HeadlightLeft",
-            "type": "MeshInstance3D",
-            "parent": "Player/TankHull"
-          },
-          {
-            "name": "HeadlightRight",
-            "type": "MeshInstance3D",
-            "parent": "Player/TankHull"
-          },
-          {
-            "name": "Turret",
-            "type": "Node3D",
-            "parent": "Player"
-          },
-          {
-            "name": "TurretMesh",
-            "type": "MeshInstance3D",
-            "parent": "Player/Turret"
-          },
-          {
-            "name": "TankGunBarrel",
-            "type": "MeshInstance3D",
-            "parent": "Player/Turret"
-          },
-          {
-            "name": "SpringArm3D",
-            "type": "SpringArm3D",
-            "parent": "Player/Turret"
-          },
-          {
-            "name": "Camera3D",
-            "type": "Camera3D",
-            "parent": "Player/Turret/SpringArm3D"
-          },
-          {
-            "name": "RedBox",
+            "name": "TankModel",
             "type": "Node",
-            "parent": "."
+            "parent": "Player"
           },
           {
             "name": "UILayer",
@@ -313,6 +278,11 @@
           "parent": "."
         },
         {
+          "name": "RedBox",
+          "type": "Node",
+          "parent": "WorldEnvironment"
+        },
+        {
           "name": "Floor",
           "type": "StaticBody3D",
           "parent": "."
@@ -363,49 +333,9 @@
           "parent": "Player"
         },
         {
-          "name": "TankHull",
-          "type": "MeshInstance3D",
-          "parent": "Player"
-        },
-        {
-          "name": "HeadlightLeft",
-          "type": "MeshInstance3D",
-          "parent": "Player/TankHull"
-        },
-        {
-          "name": "HeadlightRight",
-          "type": "MeshInstance3D",
-          "parent": "Player/TankHull"
-        },
-        {
-          "name": "Turret",
-          "type": "Node3D",
-          "parent": "Player"
-        },
-        {
-          "name": "TurretMesh",
-          "type": "MeshInstance3D",
-          "parent": "Player/Turret"
-        },
-        {
-          "name": "TankGunBarrel",
-          "type": "MeshInstance3D",
-          "parent": "Player/Turret"
-        },
-        {
-          "name": "SpringArm3D",
-          "type": "SpringArm3D",
-          "parent": "Player/Turret"
-        },
-        {
-          "name": "Camera3D",
-          "type": "Camera3D",
-          "parent": "Player/Turret/SpringArm3D"
-        },
-        {
-          "name": "RedBox",
+          "name": "TankModel",
           "type": "Node",
-          "parent": "."
+          "parent": "Player"
         },
         {
           "name": "UILayer",
@@ -526,8 +456,8 @@
       "code\\UI\\ui_layer.gd"
     ],
     "scenes": [
-      "default_env.tres",
       "main.tscn",
+      "default_env.tres",
       "assets\\destination_marker.tscn",
       "assets\\red_box.tscn",
       "assets\\tank_model.tscn",
@@ -536,6 +466,11 @@
     "other": [
       "game_config.cfg",
       "project.godot",
+      "icon.svg",
+      "icon.svg.import",
+      "LICENSE",
+      "README.md",
+      "default_env.tres",
       "code\\game_config.gd.uid",
       "code\\logger.gd.uid",
       "code\\player_controller.gd.uid",
