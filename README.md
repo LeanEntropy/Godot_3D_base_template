@@ -1,5 +1,6 @@
 # Godot 3D base template
 Godot 4.4 Base Template for 3D games
+
 Base code by civax (x: @civaxo, github: @LeanEntropy)
 
 A comprehensive, modular 3D game template for Godot that supports multiple control schemes and can be easily customized for any 3D game project.
