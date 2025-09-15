@@ -183,7 +183,7 @@ Each controller manages its own visuals:
 2. **Create scenes** (`.tscn` files) for reusable components
 3. **Instance in main scene** or other scenes as needed
 
-## 🧹 Cleaning Up for Production
+## Cleaning Up for Production
 
 ### Remove Unused Control Modes
 

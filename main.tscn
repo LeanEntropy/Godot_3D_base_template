@@ -1,9 +1,11 @@
-[gd_scene load_steps=16 format=3 uid="uid://bnkcsqjtokxh6"]
+[gd_scene load_steps=18 format=3 uid="uid://bnkcsqjtokxh6"]
 
 [ext_resource type="Script" uid="uid://cknif7bnpg03r" path="res://code/player_controller.gd" id="1_dax7f"]
 [ext_resource type="PackedScene" uid="uid://c6a8g6f8v8x8w" path="res://assets/UI/ui_layer.tscn" id="2_abcde"]
 [ext_resource type="PackedScene" uid="uid://b1h2w3x4y506" path="res://assets/red_box.tscn" id="3_defgh"]
 [ext_resource type="PackedScene" uid="uid://clg5wi6nllxjw" path="res://assets/tank_model.tscn" id="4_tank"]
+[ext_resource type="PackedScene" path="res://assets/crosshair.tscn" id="5_crosshair"]
+[ext_resource type="Script" uid="uid://buvt2x1hfkwmq" path="res://code/shooting_manager.gd" id="6_shooting"]
 
 [sub_resource type="ProceduralSkyMaterial" id="6"]
 sky_top_color = Color(0.317647, 0.705882, 0.94902, 1)
@@ -77,12 +79,14 @@ spot_range = 275.757
 
 [node name="Player" type="CharacterBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+collision_layer = 2
 script = ExtResource("1_dax7f")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("7")
 
 [node name="PlayerMesh" type="MeshInstance3D" parent="Player"]
+visible = false
 mesh = SubResource("8")
 surface_material_override/0 = SubResource("9")
 
@@ -110,6 +114,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 spring_length = 5.0
 
 [node name="Camera3D" type="Camera3D" parent="Player/Turret/SpringArm3D"]
-fov = 60.0
+transform = Transform3D(1, 0, 0, 0, 0.959127, 0.282978, 0, -0.282978, 0.959127, 0, 0.629145, 3.1794)
+fov = 72.0341
 
 [node name="UILayer" parent="." instance=ExtResource("2_abcde")]
+
+[node name="Crosshair" parent="UILayer" instance=ExtResource("5_crosshair")]
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ShootingManager" type="Node" parent="."]
+script = ExtResource("6_shooting")

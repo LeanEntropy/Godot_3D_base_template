@@ -1,0 +1,48 @@
+[gd_scene load_steps=2 format=3 uid="uid://wfj6b11wkwx2"]
+
+[sub_resource type="GDScript" id="1"]
+script/source = "extends Control
+
+func _ready():
+	# Center the crosshair on screen
+	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	
+	# Make it always visible on top
+	z_index = 100
+
+func _draw():
+	# Draw a simple crosshair
+	var center = size / 2
+	var length = 20
+	var thickness = 2
+	
+	# Horizontal line
+	draw_line(
+		Vector2(center.x - length, center.y),
+		Vector2(center.x + length, center.y),
+		Color.WHITE,
+		thickness
+	)
+	
+	# Vertical line
+	draw_line(
+		Vector2(center.x, center.y - length),
+		Vector2(center.x, center.y + length),
+		Color.WHITE,
+		thickness
+	)
+"
+
+[node name="Crosshair" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+script = SubResource("1")
+
