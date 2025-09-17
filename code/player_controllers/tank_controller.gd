@@ -36,6 +36,10 @@ var is_avoiding_obstacle = false
 var hitting_time = 0.0
 var stored_distance = 3.0
 
+# Audio variables
+var is_engine_playing = false
+var is_moving = false
+
 
 func initialize(player_node):
 	player = player_node
@@ -261,13 +265,20 @@ func handle_physics(delta):
 
 	# Hull Movement
 	var target_velocity = Vector3.ZERO
+	var is_moving_input = false
+	
 	if Input.is_action_pressed("forward"):
 		target_velocity = -player.transform.basis.z * GameConfig.forward_speed
+		is_moving_input = true
 	elif Input.is_action_pressed("backward"):
 		target_velocity = player.transform.basis.z * GameConfig.reverse_speed
+		is_moving_input = true
 
 	player.velocity.x = lerp(player.velocity.x, target_velocity.x, GameConfig.lerp_weight * delta)
 	player.velocity.z = lerp(player.velocity.z, target_velocity.z, GameConfig.lerp_weight * delta)
+	
+	# Handle audio based on movement
+	handle_movement_audio(is_moving_input, target_velocity.length() > 0.1)
 	
 	player.move_and_slide()
 	
@@ -316,3 +327,21 @@ func handle_camera_obstacle_avoidance(delta):
 	if current_camera_distance != target_camera_distance:
 		current_camera_distance = move_toward(current_camera_distance, target_camera_distance, GameConfig.camera_avoid_move_speed * delta)
 		spring_arm.spring_length = current_camera_distance
+
+func handle_movement_audio(is_input_pressed: bool, is_actually_moving: bool):
+	"""Handle tank engine and movement audio"""
+	# Start/stop engine sound
+	if is_input_pressed and not is_engine_playing:
+		AudioManager.play_sound("tank_engine", player.global_position)
+		is_engine_playing = true
+	elif not is_input_pressed and is_engine_playing:
+		# Stop engine sound (this would need to be implemented in AudioManager)
+		is_engine_playing = false
+	
+	# Play movement sound when actually moving
+	if is_actually_moving and not is_moving:
+		AudioManager.play_sound("tank_movement", player.global_position)
+		is_moving = true
+	elif not is_actually_moving and is_moving:
+		# Stop movement sound
+		is_moving = false

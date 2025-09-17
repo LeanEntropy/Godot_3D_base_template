@@ -21,6 +21,9 @@ config/icon="res://icon.svg"
 
 GameConfig="*res://code/game_config.gd"
 Logger="*res://code/logger.gd"
+AudioManager="*res://code/audio_manager.gd"
+SoundManager="*res://addons/resonate/sound_manager/sound_manager.gd"
+MusicManager="*res://addons/resonate/music_manager/music_manager.gd"
 
 [display]
 
@@ -82,3 +85,7 @@ shoot={
 [rendering]
 
 environment/defaults/default_environment="res://default_env.tres"
+
+[addons]
+
+resonate/enabled=true

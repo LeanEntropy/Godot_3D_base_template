@@ -73,6 +73,9 @@ func fire_projectile():
 	if not can_fire:
 		return
 	
+	# Play cannon fire sound
+	AudioManager.play_3d_sound("cannon_fire", player.global_position)
+	
 	# Create projectile
 	var projectile = Projectile.instantiate()
 	player.get_parent().add_child(projectile)

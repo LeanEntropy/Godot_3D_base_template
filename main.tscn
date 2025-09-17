@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://clg5wi6nllxjw" path="res://assets/tank_model.tscn" id="4_tank"]
 [ext_resource type="PackedScene" path="res://assets/crosshair.tscn" id="5_crosshair"]
 [ext_resource type="Script" uid="uid://buvt2x1hfkwmq" path="res://code/shooting_manager.gd" id="6_shooting"]
+[ext_resource type="PackedScene" uid="uid://b8k9j2l3m4n5o" path="res://assets/audio_setup.tscn" id="7_audio"]
 
 [sub_resource type="ProceduralSkyMaterial" id="6"]
 sky_top_color = Color(0.317647, 0.705882, 0.94902, 1)
@@ -125,3 +126,5 @@ grow_vertical = 2
 
 [node name="ShootingManager" type="Node" parent="."]
 script = ExtResource("6_shooting")
+
+[node name="AudioSetup" parent="." instance=ExtResource("7_audio")]

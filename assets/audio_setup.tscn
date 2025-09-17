@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8k9j2l3m4n5o"]
+
+[ext_resource type="Script" path="res://code/audio_setup.gd" id="1_audio_setup"]
+
+[node name="AudioSetup" type="Node"]
+script = ExtResource("1_audio_setup")
+
+[node name="SoundBank" type="Node" parent="."]
+script = preload("res://addons/resonate/sound_manager/sound_bank.gd")
+
+[node name="MusicBank" type="Node" parent="."]
+script = preload("res://addons/resonate/music_manager/music_bank.gd")
+

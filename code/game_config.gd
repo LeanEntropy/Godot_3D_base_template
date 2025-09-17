@@ -56,6 +56,12 @@ var hover_force
 var max_vertical_velocity
 var min_vertical_velocity
 
+# Audio settings
+var master_volume
+var sfx_volume
+var music_volume
+var audio_enabled
+
 func _ready():
 	config.load("res://game_config.cfg")
 
@@ -109,6 +115,12 @@ func _ready():
 	hover_force = config.get_value("tank", "hover_force", 5.0)
 	max_vertical_velocity = config.get_value("tank", "max_vertical_velocity", 10.0)
 	min_vertical_velocity = config.get_value("tank", "min_vertical_velocity", -2.0)
+	
+	# Audio settings
+	master_volume = config.get_value("audio", "master_volume", 0.0)
+	sfx_volume = config.get_value("audio", "sfx_volume", 0.0)
+	music_volume = config.get_value("audio", "music_volume", 0.0)
+	audio_enabled = config.get_value("audio", "audio_enabled", true)
 
 	is_loaded = true
 	config_loaded.emit()

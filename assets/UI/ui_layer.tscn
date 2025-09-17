@@ -40,5 +40,139 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 48
 text = "Start Game"
 
+[node name="AudioSettingsContainer" type="Panel" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+visible = false
+
+[node name="VBoxContainer" type="VBoxContainer" parent="AudioSettingsContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+
+[node name="TitleLabel" type="Label" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Audio Settings"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MasterVolumeContainer" type="HBoxContainer" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MasterVolumeLabel" type="Label" parent="AudioSettingsContainer/VBoxContainer/MasterVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Master Volume:"
+
+[node name="MasterVolumeSlider" type="HSlider" parent="AudioSettingsContainer/VBoxContainer/MasterVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -60.0
+max_value = 0.0
+value = 0.0
+step = 1.0
+
+[node name="MasterVolumeValue" type="Label" parent="AudioSettingsContainer/VBoxContainer/MasterVolumeContainer"]
+layout_mode = 2
+text = "0 dB"
+
+[node name="SFXVolumeContainer" type="HBoxContainer" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SFXVolumeLabel" type="Label" parent="AudioSettingsContainer/VBoxContainer/SFXVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SFX Volume:"
+
+[node name="SFXVolumeSlider" type="HSlider" parent="AudioSettingsContainer/VBoxContainer/SFXVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -60.0
+max_value = 0.0
+value = 0.0
+step = 1.0
+
+[node name="SFXVolumeValue" type="Label" parent="AudioSettingsContainer/VBoxContainer/SFXVolumeContainer"]
+layout_mode = 2
+text = "0 dB"
+
+[node name="MusicVolumeContainer" type="HBoxContainer" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MusicVolumeLabel" type="Label" parent="AudioSettingsContainer/VBoxContainer/MusicVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Music Volume:"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="AudioSettingsContainer/VBoxContainer/MusicVolumeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = -60.0
+max_value = 0.0
+value = 0.0
+step = 1.0
+
+[node name="MusicVolumeValue" type="Label" parent="AudioSettingsContainer/VBoxContainer/MusicVolumeContainer"]
+layout_mode = 2
+text = "0 dB"
+
+[node name="HSeparator2" type="HSeparator" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MusicSelectionContainer" type="HBoxContainer" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="AudioSettingsContainer/VBoxContainer/MusicSelectionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Music Track:"
+
+[node name="MusicOptionButton" type="OptionButton" parent="AudioSettingsContainer/VBoxContainer/MusicSelectionContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator3" type="HSeparator" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ButtonContainer" type="HBoxContainer" parent="AudioSettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="CloseButton" type="Button" parent="AudioSettingsContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Close"
+
+[node name="TestSoundButton" type="Button" parent="AudioSettingsContainer/VBoxContainer/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Test Sound"
+
+[node name="AudioButton" type="Button" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+text = "Audio"
+
 [connection signal="pressed" from="MarginContainer/PauseButton" to="." method="_on_PauseButton_pressed"]
 [connection signal="pressed" from="StartGameContainer/StartGameButton" to="." method="_on_StartGameButton_pressed"]
+[connection signal="pressed" from="MarginContainer/AudioButton" to="." method="_on_AudioButton_pressed"]
+[connection signal="pressed" from="AudioSettingsContainer/VBoxContainer/ButtonContainer/CloseButton" to="." method="_on_CloseButton_pressed"]
+[connection signal="pressed" from="AudioSettingsContainer/VBoxContainer/ButtonContainer/TestSoundButton" to="." method="_on_TestSoundButton_pressed"]
+[connection signal="value_changed" from="AudioSettingsContainer/VBoxContainer/MasterVolumeContainer/MasterVolumeSlider" to="." method="_on_MasterVolumeSlider_value_changed"]
+[connection signal="value_changed" from="AudioSettingsContainer/VBoxContainer/SFXVolumeContainer/SFXVolumeSlider" to="." method="_on_SFXVolumeSlider_value_changed"]
+[connection signal="value_changed" from="AudioSettingsContainer/VBoxContainer/MusicVolumeContainer/MusicVolumeSlider" to="." method="_on_MusicVolumeSlider_value_changed"]
+[connection signal="item_selected" from="AudioSettingsContainer/VBoxContainer/MusicSelectionContainer/MusicOptionButton" to="." method="_on_MusicOptionButton_item_selected"]

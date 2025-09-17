@@ -26,6 +26,9 @@ func _on_body_entered(body):
 	if body.name == "Player":
 		return
 	
+	# Play impact sound
+	AudioManager.play_3d_sound("projectile_impact", global_position)
+	
 	# Handle collision
 	Logger.info("Projectile hit: " + str(body.name))
 	destroy()
