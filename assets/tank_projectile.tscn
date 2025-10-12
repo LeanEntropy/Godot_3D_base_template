@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3 uid="uid://b8iai2j3k4l5m"]
+
+[ext_resource type="Script" uid="uid://ddgg656e7igm6" path="res://code/tank_projectile.gd" id="1_tank_proj"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1"]
+radius = 0.4
+
+[sub_resource type="SphereMesh" id="SphereMesh_1"]
+radius = 0.4
+height = 0.8
+radial_segments = 16
+rings = 8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+shading_mode = 0
+albedo_color = Color(1, 0.4, 0, 1)
+
+[node name="TankProjectile" type="RigidBody3D"]
+gravity_scale = 0.0
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_tank_proj")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.65, 0, 1)
+light_energy = 4.0
+omni_range = 8.0
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

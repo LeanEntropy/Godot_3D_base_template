@@ -1,347 +1,324 @@
 extends Node
+# Tank Controller - Proper tank combat with turret-controlled camera
+#
+# Controls:
+# - W/S: Forward/backward movement
+# - A/D: Hull rotation (turn tank body)
+# - Mouse: Aim turret (camera follows turret)
+# - Left Click: Fire projectile
+#
+# Camera follows turret rotation for aiming
 
-var player
-var spring_arm
-var camera
-var player_mesh
-var selection_ring
-var turret
-var turret_mesh
-var tank_hull
-var tank_gun_barrel
-var tank_model
-var logical_turret
+const TankProjectile = preload("res://assets/tank_projectile.tscn")
 
-# Turret control variables (inspired by Unity Turret_Control_CS)
-var turret_turn_rate = 0.0
-var previous_turret_turn_rate = 0.0
-var is_turret_turning = false
+# Player references
+var player: CharacterBody3D
+var camera: Camera3D
+var spring_arm: SpringArm3D
+var turret: Node3D
+var barrel_tip: Node3D
+var barrel_pivot: Node3D  # For vertical barrel rotation
 
-# Cannon control variables (inspired by Unity Cannon_Control_CS)
-var cannon_turn_rate = 0.0
-var previous_cannon_turn_rate = 0.0
-var is_cannon_turning = false
-var cannon_angle = 0.0
-var initial_cannon_rotation = Vector3.ZERO
+# Visual elements
+var player_mesh: MeshInstance3D
+var tank_hull: Node3D
 
-# Recoil system variables (inspired by Unity Barrel_Control_CS)
-var is_recoiling = false
-var barrel_initial_position = Vector3.ZERO
-var recoil_tween: Tween
+# Configuration
+var mouse_sensitivity: float = 0.002
+var movement_speed: float = 5.0
+var gravity: float = 9.8
+var fire_rate: float = 0.5
+var projectile_speed: float = 50.0
+var hull_turn_speed: float = 2.0
 
-# Camera obstacle avoidance variables (inspired by Unity Camera_Avoid_Obstacle_CS)
-var current_camera_distance = 3.0
-var target_camera_distance = 3.0
-var is_avoiding_obstacle = false
-var hitting_time = 0.0
-var stored_distance = 3.0
+# State
+var is_active: bool = false
+var can_shoot: bool = true
+var camera_pitch: float = 0.0
+var turret_yaw: float = 0.0
+var barrel_pitch: float = 0.0
+var barrel_pitch_min: float = -10.0  # Can aim down 10°
+var barrel_pitch_max: float = 70.0   # Can aim up 70°
 
-# Audio variables
-var is_engine_playing = false
-var is_moving = false
+# UI
+var crosshair_ui: Control = null
 
-
-func initialize(player_node):
+func initialize(player_node: CharacterBody3D) -> void:
+	Logger.info("TankController initializing...")
+	
+	if player_node == null:
+		Logger.error("TankController: Player node is null!")
+		return
+	
 	player = player_node
+	is_active = true
 	
-	# Get tank model components from the TankModel instance
-	tank_model = player.get_node("TankModel")
-	turret = tank_model.get_node("Turret")
-	turret_mesh = turret.get_node("TurretMesh")
-	tank_hull = tank_model.get_node("TankHull")
-	tank_gun_barrel = turret.get_node("TankGunBarrel")
+	# Get nodes
+	turret = player.get_node("Turret")
 	player_mesh = player.get_node("PlayerMesh")
-	selection_ring = player.get_node("SelectionRing")
+	tank_hull = player.get_node("TankHull")
 	
-	# Create a camera attached to the turret for tank view
-	create_tank_camera()
+	# Setup camera on turret (camera follows turret rotation)
+	if player.has_node("Turret/SpringArm3D"):
+		spring_arm = player.get_node("Turret/SpringArm3D")
+		camera = spring_arm.get_node("Camera3D")
+	else:
+		Logger.error("TankController: Missing SpringArm3D under Turret!")
+		return
 	
-	logical_turret = Node3D.new() # Create a new Node3D for logical turret rotation
-	player.add_child(logical_turret)
+	# Setup barrel pivot for elevation
+	if player.has_node("Turret/BarrelPivot"):
+		barrel_pivot = player.get_node("Turret/BarrelPivot")
+		Logger.info("Found existing BarrelPivot")
+	else:
+		Logger.warning("No BarrelPivot found - creating one")
+		barrel_pivot = Node3D.new()
+		barrel_pivot.name = "BarrelPivot"
+		turret.add_child(barrel_pivot)
+		
+		# Move barrel under pivot
+		var barrel = player.get_node("Turret/TankGunBarrel")
+		if barrel:
+			barrel.get_parent().remove_child(barrel)
+			barrel_pivot.add_child(barrel)
+			barrel.position = Vector3(0, 0, 0)  # Reset position
+		barrel_pivot.position = Vector3(0, 0.3, 0)  # Adjust height
+	
+	# Get or create barrel tip
+	if player.has_node("Turret/BarrelPivot/TankGunBarrel/BarrelTip"):
+		barrel_tip = player.get_node("Turret/BarrelPivot/TankGunBarrel/BarrelTip")
+	elif player.has_node("Turret/TankGunBarrel/BarrelTip"):
+		barrel_tip = player.get_node("Turret/TankGunBarrel/BarrelTip")
+	else:
+		var barrel = player.get_node_or_null("Turret/BarrelPivot/TankGunBarrel")
+		if not barrel:
+			barrel = player.get_node_or_null("Turret/TankGunBarrel")
+		if barrel:
+			barrel_tip = Node3D.new()
+			barrel_tip.name = "BarrelTip"
+			barrel.add_child(barrel_tip)
+			barrel_tip.position = Vector3(0, 0, -2.0)
+	
+	# Load config
+	movement_speed = GameConfig.speed
+	gravity = GameConfig.gravity
+	hull_turn_speed = GameConfig.hull_turn_speed
+	mouse_sensitivity = GameConfig.mouse_sensitivity
+	
+	var config = ConfigFile.new()
+	config.load("res://game_config.cfg")
+	fire_rate = config.get_value("tank", "fire_rate", 0.5)
+	projectile_speed = config.get_value("tank", "projectile_speed", 50.0)
+	barrel_pitch_min = config.get_value("tank", "barrel_pitch_min", -10.0)
+	barrel_pitch_max = config.get_value("tank", "barrel_pitch_max", 70.0)
+	
+	# Camera setup
+	spring_arm.spring_length = 8.0
+	spring_arm.position = Vector3(0, 1.5, 0)
+	camera.fov = 75.0
+	
+	# Reset rotations
+	turret.rotation = Vector3.ZERO
+	camera_pitch = -10.0
+	turret_yaw = 0.0
+	
+	# Visuals
+	player_mesh.hide()
+	tank_hull.show()
+	
+	# Create simple crosshair (deferred)
+	call_deferred("_create_crosshair")
+	
+	# Capture mouse
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	
+	# Camera debug
+	Logger.info("=== CAMERA DEBUG ===")
+	Logger.info("Camera exists: " + str(camera != null))
+	if camera:
+		Logger.info("Camera position: " + str(camera.global_position))
+		Logger.info("Camera rotation: " + str(camera.global_rotation_degrees))
+		Logger.info("Camera current: " + str(camera.current))
+		Logger.info("Camera cull_mask: " + str(camera.cull_mask))
+		Logger.info("Camera near: " + str(camera.near))
+		Logger.info("Camera far: " + str(camera.far))
+	
+	Logger.info("TankController initialized")
 
-	# Hide all visuals except the tank model
-	if player_mesh: player_mesh.hide()
-	if selection_ring: selection_ring.hide()
-	if turret_mesh: turret_mesh.show()
-	if tank_hull: tank_hull.show()
-	if tank_gun_barrel: tank_gun_barrel.show()
-	if tank_model: tank_model.show()
+func _create_crosshair() -> void:
+	"""Create simple crosshair UI"""
+	Logger.info("Creating crosshair UI...")
 	
-	# Store initial barrel position and rotation for recoil and cannon control
-	if tank_gun_barrel:
-		barrel_initial_position = tank_gun_barrel.position
-		# The gun barrel starts pointing upward (90 degrees on X-axis)
-		# We need to correct this to point forward (horizontal)
-		initial_cannon_rotation = tank_gun_barrel.rotation
-		initial_cannon_rotation.x -= PI/2  # Subtract 90 degrees to make it horizontal
-		tank_gun_barrel.rotation = initial_cannon_rotation
-		# Set initial cannon angle to 0 (horizontal relative to the tank's forward direction)
-		cannon_angle = 0.0
-		print("Initial gun barrel rotation: ", initial_cannon_rotation)
-		print("Initial gun barrel transform: ", tank_gun_barrel.transform)
+	crosshair_ui = Control.new()
+	crosshair_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	crosshair_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crosshair_ui.z_index = 100  # Ensure it's on top
+	
+	var center = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	crosshair_ui.add_child(center)
+	
+	var label = Label.new()
+	label.text = "+"
+	label.add_theme_font_size_override("font_size", 48)  # Bigger
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 4)  # Thicker outline
+	center.add_child(label)
+	
+	# Add to scene
+	get_tree().root.add_child(crosshair_ui)
+	
+	Logger.info("Crosshair created and added to scene tree")
+	Logger.info("Crosshair visible: " + str(crosshair_ui.visible))
+	Logger.info("Crosshair z_index: " + str(crosshair_ui.z_index))
 
-func create_tank_camera():
-	# Create a SpringArm3D attached to the turret for camera positioning
-	spring_arm = SpringArm3D.new()
-	spring_arm.name = "TankSpringArm"
-	turret.add_child(spring_arm)
+func handle_input(event: InputEvent) -> void:
+	if not is_active:
+		return
 	
-	# Position the spring arm behind and above the turret
-	spring_arm.position = Vector3(0, 0.5, 2.0)  # Behind the turret
-	spring_arm.spring_length = 3.0
-	spring_arm.collision_mask = 1  # Only collide with ground/objects
-	
-	# Create the camera
-	camera = Camera3D.new()
-	camera.name = "TankCamera"
-	spring_arm.add_child(camera)
-	
-	# Set camera properties for tank view
-	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	camera.fov = GameConfig.default_fov
-	
-	# Disable the main scene camera first
-	var main_camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	if main_camera:
-		main_camera.current = false
-		print("Main camera disabled for tank mode")
-	
-	# Make this camera the current camera
-	camera.current = true
-	print("Tank camera enabled: ", camera)
-	
-	# Update shooting manager with the tank camera
-	var shooting_manager = player.get_node("../ShootingManager")
-	if shooting_manager:
-		shooting_manager.camera = camera
-		print("Tank camera set for shooting manager: ", camera)
-
-func _ready():
-	pass
-
-func cleanup():
-	# Re-enable the main scene camera
-	var main_camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	if main_camera:
-		main_camera.current = true
-		print("Main camera re-enabled after tank mode")
-	
-	# Remove the tank camera when switching away from tank mode
-	if spring_arm and is_instance_valid(spring_arm):
-		spring_arm.queue_free()
-		spring_arm = null
-		camera = null
-
-func handle_input(event):
+	# Mouse look - rotates turret and barrel
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		# Horizontal mouse movement rotates the turret
-		var turret_input = -event.relative.x * GameConfig.turret_turn_speed
-		handle_turret_rotation(turret_input)
+		# Horizontal: rotate turret (Y axis)
+		turret_yaw -= event.relative.x * mouse_sensitivity
+		turret.rotation.y = turret_yaw
 		
-		# Vertical mouse movement controls cannon elevation
-		var cannon_input = -event.relative.y * GameConfig.turret_turn_speed * 10.0  # Increase sensitivity
-		handle_cannon_elevation(cannon_input)
-
-func handle_turret_rotation(input_value):
-	# Based on Unity Turret_Control_CS Manual_Turn()
-	if input_value != 0.0:
-		is_turret_turning = true
-	
-	if not is_turret_turning:
-		return
-	
-	# Calculate turn rate with acceleration/deceleration
-	var target_turn_rate = input_value
-	if target_turn_rate != 0.0:
-		turret_turn_rate = move_toward(turret_turn_rate, target_turn_rate, 1.0 / GameConfig.turret_acceleration_time * get_physics_process_delta_time())
-	else:
-		turret_turn_rate = move_toward(turret_turn_rate, target_turn_rate, 1.0 / GameConfig.turret_deceleration_time * get_physics_process_delta_time())
-	
-	if turret_turn_rate == 0.0:
-		is_turret_turning = false
-	
-	# Rotate turret
-	var rotation_amount = GameConfig.turret_rotation_speed * turret_turn_rate * get_physics_process_delta_time()
-	logical_turret.rotate_y(rotation_amount)
-	turret.rotate_y(rotation_amount)
-
-func handle_cannon_elevation(input_value):
-	# Based on Unity Cannon_Control_CS Manual_Turn()
-	if input_value != 0.0:
-		is_cannon_turning = true
-		print("Cannon input received: ", input_value)
-	
-	if not is_cannon_turning:
-		return
-	
-	# Calculate turn rate with acceleration/deceleration
-	var target_turn_rate = input_value
-	if target_turn_rate != 0.0:
-		cannon_turn_rate = move_toward(cannon_turn_rate, target_turn_rate, 1.0 / GameConfig.cannon_acceleration_time * get_physics_process_delta_time())
-	else:
-		cannon_turn_rate = move_toward(cannon_turn_rate, target_turn_rate, 1.0 / GameConfig.cannon_deceleration_time * get_physics_process_delta_time())
-	
-	if cannon_turn_rate == 0.0:
-		is_cannon_turning = false
-	
-	# Rotate cannon with angle limits
-	var rotation_amount = GameConfig.cannon_rotation_speed * cannon_turn_rate * get_physics_process_delta_time()
-	cannon_angle += rotation_amount
-	cannon_angle = clamp(cannon_angle, -GameConfig.max_elevation, GameConfig.max_depression)
-	
-	# Apply rotation to the gun barrel
-	# For tank gun elevation, we rotate around the X-axis
-	if tank_gun_barrel:
-		# Reset to original rotation and add elevation around X-axis
-		tank_gun_barrel.rotation = initial_cannon_rotation
-		tank_gun_barrel.rotate_x(deg_to_rad(cannon_angle))
-		print("Cannon angle: ", cannon_angle, " Gun barrel rotation: ", tank_gun_barrel.rotation)
-
-func start_recoil():
-	# Based on Unity Barrel_Control_CS Fire_Linkage()
-	if is_recoiling:
-		return
-	
-	is_recoiling = true
-	
-	# Stop any existing tween
-	if recoil_tween:
-		recoil_tween.kill()
-	
-	recoil_tween = create_tween()
-	recoil_tween.set_parallel(true)
-	
-	# Move barrel backward
-	var recoil_position = barrel_initial_position + Vector3(0, 0, -GameConfig.recoil_length)
-	recoil_tween.tween_property(tank_gun_barrel, "position", recoil_position, GameConfig.recoil_time)
-	
-	# Return barrel to initial position
-	recoil_tween.tween_delay(GameConfig.recoil_time)
-	recoil_tween.tween_property(tank_gun_barrel, "position", barrel_initial_position, GameConfig.return_time)
-	
-	# Also restore the current cannon angle during recoil
-	var current_rotation = initial_cannon_rotation
-	current_rotation.x += deg_to_rad(cannon_angle)
-	recoil_tween.tween_property(tank_gun_barrel, "rotation", current_rotation, GameConfig.recoil_time)
-	
-	# Reset recoil flag when done
-	recoil_tween.tween_callback(func(): is_recoiling = false)
-
-func handle_physics(delta):
-	# Tank gravity and hovering system
-	var ground_distance = 0.0
-	var is_grounded = false
-	
-	# Cast ray downward to detect ground
-	var space_state = player.get_world_3d().direct_space_state
-	var from = player.global_position
-	var to = player.global_position + Vector3(0, -10, 0)  # Cast 10 units down
-	
-	var query = PhysicsRayQueryParameters3D.create(from, to)
-	query.exclude = [player, tank_model]  # Exclude tank from raycast
-	var result = space_state.intersect_ray(query)
-	
-	if result:
-		ground_distance = player.global_position.y - result.position.y
-		is_grounded = ground_distance < GameConfig.hover_height + 0.5  # Within hover range
-	
-	# Apply gravity and hovering
-	if is_grounded:
-		# Hover above ground
-		var target_y = result.position.y + GameConfig.hover_height
-		var current_y = player.global_position.y
-		var height_error = target_y - current_y
+		# Vertical: pitch barrel AND camera together
+		var pitch_delta = -event.relative.y * mouse_sensitivity
 		
-		# Apply upward force to maintain hover height
-		player.velocity.y += height_error * GameConfig.hover_force * delta
-		player.velocity.y = clamp(player.velocity.y, GameConfig.min_vertical_velocity, GameConfig.max_vertical_velocity)
-	else:
-		# Apply gravity when not grounded
-		player.velocity.y -= GameConfig.gravity * delta
-
-	# Hull Rotation
-	var turn_input = Input.get_action_strength("left") - Input.get_action_strength("right")
-	player.rotate_y(turn_input * GameConfig.hull_turn_speed * delta)
-
-	# Hull Movement
-	var target_velocity = Vector3.ZERO
-	var is_moving_input = false
+		# Update barrel pitch
+		barrel_pitch += pitch_delta
+		barrel_pitch = clamp(barrel_pitch, deg_to_rad(barrel_pitch_min), deg_to_rad(barrel_pitch_max))
+		
+		if barrel_pivot:
+			barrel_pivot.rotation.x = barrel_pitch
+		
+		# Camera follows barrel pitch (but with different limits)
+		camera_pitch = rad_to_deg(barrel_pitch)
+		camera_pitch = clamp(camera_pitch, -15.0, 60.0)  # Camera doesn't look as extreme
+		camera.rotation_degrees.x = camera_pitch
 	
-	if Input.is_action_pressed("forward"):
-		target_velocity = -player.transform.basis.z * GameConfig.forward_speed
-		is_moving_input = true
-	elif Input.is_action_pressed("backward"):
-		target_velocity = player.transform.basis.z * GameConfig.reverse_speed
-		is_moving_input = true
-
-	player.velocity.x = lerp(player.velocity.x, target_velocity.x, GameConfig.lerp_weight * delta)
-	player.velocity.z = lerp(player.velocity.z, target_velocity.z, GameConfig.lerp_weight * delta)
+	# Shooting - ADD DEBUG
+	if event is InputEventMouseButton:
+		Logger.info("Mouse button event: " + str(event.button_index) + " pressed: " + str(event.pressed))
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			Logger.info("Left click detected, calling shoot")
+			_shoot_projectile()
 	
-	# Handle audio based on movement
-	handle_movement_audio(is_moving_input, target_velocity.length() > 0.1)
+	# Release mouse on ESC
+	if event.is_action_pressed("ui_cancel"):
+		if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
+			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		else:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+func handle_physics(delta: float) -> void:
+	if not is_active:
+		return
+	
+	# Gravity
+	if not player.is_on_floor():
+		player.velocity.y -= gravity * delta
+	
+	# Input
+	var forward_input: float = Input.get_action_strength("forward") - Input.get_action_strength("backward")
+	var turn_input: float = Input.get_action_strength("right") - Input.get_action_strength("left")
+	
+	# Hull rotation (A/D keys)
+	player.rotate_y(turn_input * hull_turn_speed * delta)
+	
+	# Movement (W/S keys) - always relative to hull direction
+	var move_direction: Vector3 = -player.transform.basis.z * forward_input
+	
+	player.velocity.x = move_direction.x * movement_speed
+	player.velocity.z = move_direction.z * movement_speed
 	
 	player.move_and_slide()
-	
-	# Camera obstacle avoidance
-	handle_camera_obstacle_avoidance(delta)
 
-func handle_camera_obstacle_avoidance(delta):
-	# Based on Unity Camera_Avoid_Obstacle_CS
-	if not spring_arm or not camera:
+func _shoot_projectile() -> void:
+	"""Fire real tank projectile"""
+	if not can_shoot:
 		return
 	
-	# Cast ray from spring arm to camera
-	var space_state = player.get_world_3d().direct_space_state
-	var from = spring_arm.global_position
-	var to = camera.global_position
-	var direction = (to - from).normalized()
-	var distance = from.distance_to(to) + 1.0
+	if barrel_tip == null:
+		Logger.error("No barrel tip!")
+		return
 	
-	var query = PhysicsRayQueryParameters3D.create(from, from + direction * distance)
-	query.exclude = [player, tank_model]  # Exclude tank from raycast
-	var result = space_state.intersect_ray(query)
+	Logger.info("Firing real projectile...")
 	
-	if result:
-		# Hit an obstacle
-		if not is_avoiding_obstacle:
-			hitting_time += delta
-			if hitting_time > GameConfig.camera_avoid_lag:
-				# Start avoiding obstacle
-				hitting_time = 0.0
-				is_avoiding_obstacle = true
-				stored_distance = target_camera_distance
-				target_camera_distance = result.distance
-				target_camera_distance = clamp(target_camera_distance, GameConfig.camera_avoid_min_dist, GameConfig.camera_avoid_max_dist)
-		else:
-			# Already avoiding, check for closer obstacle
-			if result.distance < stored_distance:
-				target_camera_distance = result.distance
-				target_camera_distance = clamp(target_camera_distance, GameConfig.camera_avoid_min_dist, GameConfig.camera_avoid_max_dist)
-	else:
-		# No obstacle, return to stored position
-		if is_avoiding_obstacle:
-			is_avoiding_obstacle = false
-			target_camera_distance = stored_distance
+	# Create real projectile from scene
+	var projectile = TankProjectile.instantiate()
+	get_tree().root.add_child(projectile)
 	
-	# Move camera to target distance
-	if current_camera_distance != target_camera_distance:
-		current_camera_distance = move_toward(current_camera_distance, target_camera_distance, GameConfig.camera_avoid_move_speed * delta)
-		spring_arm.spring_length = current_camera_distance
+	# Position ahead of barrel
+	var barrel_forward: Vector3 = -barrel_tip.global_transform.basis.z
+	var spawn_pos: Vector3 = barrel_tip.global_position + (barrel_forward * 2.0)
+	projectile.global_position = spawn_pos
+	
+	# Launch
+	projectile.launch(barrel_forward, projectile_speed)
+	
+	Logger.info("Projectile spawned at: " + str(spawn_pos))
+	
+	# Cooldown
+	can_shoot = false
+	await get_tree().create_timer(1.0 / fire_rate).timeout
+	can_shoot = true
 
-func handle_movement_audio(is_input_pressed: bool, is_actually_moving: bool):
-	"""Handle tank engine and movement audio"""
-	# Start/stop engine sound
-	if is_input_pressed and not is_engine_playing:
-		AudioManager.play_sound("tank_engine", player.global_position)
-		is_engine_playing = true
-	elif not is_input_pressed and is_engine_playing:
-		# Stop engine sound (this would need to be implemented in AudioManager)
-		is_engine_playing = false
+func _create_test_sphere(position: Vector3, direction: Vector3) -> void:
+	"""Create a simple test sphere to verify projectile visibility"""
+	var test_sphere = CSGSphere3D.new()
+	test_sphere.radius = 0.5
+	test_sphere.material = StandardMaterial3D.new()
+	test_sphere.material.albedo_color = Color.RED
+	test_sphere.material.emission_enabled = true
+	test_sphere.material.emission = Color.RED
+	test_sphere.material.emission_energy = 3.0
 	
-	# Play movement sound when actually moving
-	if is_actually_moving and not is_moving:
-		AudioManager.play_sound("tank_movement", player.global_position)
-		is_moving = true
-	elif not is_actually_moving and is_moving:
-		# Stop movement sound
-		is_moving = false
+	get_tree().root.add_child(test_sphere)
+	test_sphere.global_position = position
+	
+	Logger.info("TEST projectile created at: " + str(position))
+	
+	# Move the test sphere
+	var tween = create_tween()
+	tween.tween_property(test_sphere, "global_position", position + direction * 20.0, 2.0)
+	tween.tween_callback(test_sphere.queue_free)
+
+func _print_scene_tree(node: Node, indent: int) -> void:
+	var spaces = ""
+	for i in range(indent):
+		spaces += "  "
+	
+	var info = spaces + node.name + " (" + node.get_class() + ")"
+	
+	if node is MeshInstance3D:
+		var mesh_inst = node as MeshInstance3D
+		info += " - Mesh: " + str(mesh_inst.mesh != null)
+		info += " - Visible: " + str(mesh_inst.visible)
+		if mesh_inst.mesh:
+			info += " - Material: " + str(mesh_inst.get_surface_override_material(0) != null)
+	
+	if node is RigidBody3D:
+		var rb = node as RigidBody3D
+		info += " - Pos: " + str(rb.global_position)
+		info += " - Vel: " + str(rb.linear_velocity)
+	
+	Logger.info(info)
+	
+	for child in node.get_children():
+		_print_scene_tree(child, indent + 1)
+
+func _calculate_movement_direction() -> Vector3:
+	return Vector3.ZERO
+
+func cleanup() -> void:
+	"""Cleanup"""
+	is_active = false
+	
+	if crosshair_ui and is_instance_valid(crosshair_ui):
+		crosshair_ui.queue_free()
+	
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	
+	Logger.info("TankController cleaned up")

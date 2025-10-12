@@ -18,3 +18,7 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+.claude/settings.local.json
+.claude_model
+.clauderules
+CLAUDE.md
