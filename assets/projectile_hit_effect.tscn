@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3 uid="uid://d3adgtjq862db"]
+
+[ext_resource type="Script" uid="uid://cet6qwfanelqj" path="res://code/projectile_hit_effect.gd" id="1_hit_effect"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1"]
+direction = Vector3(0, 1, 0)
+initial_velocity_min = 3.0
+initial_velocity_max = 8.0
+scale_min = 0.1
+scale_max = 0.3
+
+[sub_resource type="QuadMesh" id="QuadMesh_1"]
+size = Vector2(0.1, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="HitMaterial"]
+albedo_color = Color(1, 0.5, 0, 1)
+emission_enabled = true
+emission = Color(1, 0.8, 0, 1)
+emission_energy_multiplier = 2.0
+billboard_mode = 1
+
+[node name="HitEffect" type="GPUParticles3D"]
+emitting = false
+amount = 20
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_1")
+draw_pass_1 = SubResource("QuadMesh_1")
+script = ExtResource("1_hit_effect")
+
+[node name="HitEffect" type="GPUParticles3D" parent="."]
+material_override = SubResource("HitMaterial")

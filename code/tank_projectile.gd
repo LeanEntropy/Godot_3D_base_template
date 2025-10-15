@@ -1,6 +1,9 @@
 extends RigidBody3D
 class_name TankProjectile
 
+# Preload hit effect
+const HitEffectScene = preload("res://assets/projectile_hit_effect.tscn")
+
 @export var speed: float = 30.0
 @export var lifetime: float = 8.0
 @export var damage: int = 25
@@ -32,6 +35,15 @@ func launch(launch_direction: Vector3, launch_speed: float = 30.0) -> void:
 
 func _on_body_entered(body: Node) -> void:
 	Logger.info("Projectile hit: " + body.name)
+	
+	# Create hit effect at impact point
+	var hit_effect = HitEffectScene.instantiate()
+	get_tree().root.add_child(hit_effect)
+	hit_effect.global_position = global_position
+	
+	# Deal damage
 	if body.has_method("take_damage"):
 		body.take_damage(damage)
+	
+	# Destroy projectile
 	queue_free()

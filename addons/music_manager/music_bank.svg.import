@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bxfmecl088q55"
-path="res://.godot/imported/music_bank.svg-4038ad3a11ca952c7a39bede8a3b962e.ctex"
+path="res://.godot/imported/music_bank.svg-e1950bf05139bdd297601bee012c950c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/resonate/music_manager/music_bank.svg"
-dest_files=["res://.godot/imported/music_bank.svg-4038ad3a11ca952c7a39bede8a3b962e.ctex"]
+source_file="res://addons/music_manager/music_bank.svg"
+dest_files=["res://.godot/imported/music_bank.svg-e1950bf05139bdd297601bee012c950c.ctex"]
 
 [params]
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://bnkcsqjtokxh6"]
+[gd_scene load_steps=32 format=3 uid="uid://bnkcsqjtokxh6"]
 
 [ext_resource type="Script" uid="uid://cknif7bnpg03r" path="res://code/player_controller.gd" id="1_dax7f"]
 [ext_resource type="PackedScene" uid="uid://c6a8g6f8v8x8w" path="res://assets/UI/ui_layer.tscn" id="2_abcde"]
@@ -42,30 +42,84 @@ albedo_color = Color(0, 1, 0, 1)
 emission_enabled = true
 emission = Color(0, 1, 0, 1)
 
-[sub_resource type="BoxMesh" id="14"]
-size = Vector3(1.5, 0.5, 2.5)
+[sub_resource type="BoxMesh" id="BoxMesh_h2yge"]
+size = Vector3(2, 0.6, 3.2)
 
-[sub_resource type="StandardMaterial3D" id="15"]
-albedo_color = Color(0.3, 0.4, 0.3, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1bvp3"]
+albedo_color = Color(0.25, 0.3, 0.2, 1)
+metallic = 0.3
+roughness = 0.8
 
-[sub_resource type="BoxMesh" id="17"]
-size = Vector3(0.2, 0.2, 0.1)
+[sub_resource type="CylinderMesh" id="CylinderMesh_lquwl"]
+top_radius = 0.08
+bottom_radius = 0.08
+height = 0.08
 
-[sub_resource type="StandardMaterial3D" id="18"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7mycd"]
 albedo_color = Color(1, 1, 0, 1)
 emission_enabled = true
 emission = Color(1, 1, 0, 1)
+emission_energy_multiplier = 2.0
 
-[sub_resource type="BoxMesh" id="12"]
-size = Vector3(0.6, 0.4, 1.2)
-
-[sub_resource type="StandardMaterial3D" id="13"]
-albedo_color = Color(0.8, 0.8, 0.8, 1)
-
-[sub_resource type="CylinderMesh" id="16"]
+[sub_resource type="CylinderMesh" id="CylinderMesh_272bh"]
 top_radius = 0.08
 bottom_radius = 0.08
-height = 1.5
+height = 0.08
+
+[sub_resource type="BoxMesh" id="BoxMesh_5vw27"]
+size = Vector3(1.5, 0.4, 2.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_kek77"]
+size = Vector3(0.2, 0.5, 3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4c57u"]
+albedo_color = Color(0.15, 0.2, 0.15, 1)
+metallic = 0.2
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_efxa6"]
+size = Vector3(0.2, 0.5, 3)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_h2yge"]
+top_radius = 0.6
+bottom_radius = 0.6
+height = 0.5
+radial_segments = 32
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2cqfq"]
+albedo_color = Color(0.4, 0.4, 0.4, 1)
+metallic = 0.5
+roughness = 0.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_074og"]
+top_radius = 0.15
+bottom_radius = 0.15
+height = 0.1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_cegan"]
+top_radius = 0.65
+bottom_radius = 0.65
+height = 0.05
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w48qg"]
+albedo_color = Color(0.2, 0.2, 0.2, 1)
+metallic = 0.4
+roughness = 0.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_82xsv"]
+top_radius = 0.03
+bottom_radius = 0.03
+height = 0.3
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_getpj"]
+top_radius = 0.15
+bottom_radius = 0.15
+height = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ryguw"]
+albedo_color = Color(0.3, 0.3, 0.3, 1)
+metallic = 0.6
+roughness = 0.7
 
 [node name="Main" type="Node3D"]
 
@@ -97,7 +151,7 @@ shadow_enabled = true
 spot_range = 275.757
 
 [node name="Player" type="CharacterBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 script = ExtResource("1_dax7f")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
@@ -113,40 +167,74 @@ mesh = SubResource("10")
 surface_material_override/0 = SubResource("11")
 
 [node name="TankHull" type="MeshInstance3D" parent="Player"]
-mesh = SubResource("14")
-surface_material_override/0 = SubResource("15")
+mesh = SubResource("BoxMesh_h2yge")
+surface_material_override/0 = SubResource("StandardMaterial3D_1bvp3")
 
 [node name="HeadlightLeft" type="MeshInstance3D" parent="Player/TankHull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.1, -1.2)
-mesh = SubResource("17")
-surface_material_override/0 = SubResource("18")
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.5, 0.1, -1.2)
+mesh = SubResource("CylinderMesh_lquwl")
+surface_material_override/0 = SubResource("StandardMaterial3D_7mycd")
 
 [node name="HeadlightRight" type="MeshInstance3D" parent="Player/TankHull"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.1, -1.2)
-mesh = SubResource("17")
-surface_material_override/0 = SubResource("18")
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0.5, 0.1, -1.2)
+mesh = SubResource("CylinderMesh_272bh")
+surface_material_override/0 = SubResource("StandardMaterial3D_7mycd")
+
+[node name="@MeshInstance3D@40122" type="MeshInstance3D" parent="Player/TankHull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.2)
+mesh = SubResource("BoxMesh_5vw27")
+surface_material_override/0 = SubResource("StandardMaterial3D_1bvp3")
+
+[node name="_MeshInstance3D_40123" type="MeshInstance3D" parent="Player/TankHull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, -0.3, 0)
+mesh = SubResource("BoxMesh_kek77")
+surface_material_override/0 = SubResource("StandardMaterial3D_4c57u")
+
+[node name="@MeshInstance3D@40124" type="MeshInstance3D" parent="Player/TankHull"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, -0.3, 0)
+mesh = SubResource("BoxMesh_efxa6")
+surface_material_override/0 = SubResource("StandardMaterial3D_4c57u")
 
 [node name="Turret" type="Node3D" parent="Player"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 
 [node name="TurretMesh" type="MeshInstance3D" parent="Player/Turret"]
-mesh = SubResource("12")
-surface_material_override/0 = SubResource("13")
+mesh = SubResource("CylinderMesh_h2yge")
+surface_material_override/0 = SubResource("StandardMaterial3D_2cqfq")
 
-[node name="TankGunBarrel" type="MeshInstance3D" parent="Player/Turret"]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, -1.3)
-mesh = SubResource("16")
-surface_material_override/0 = SubResource("13")
+[node name="@MeshInstance3D@40128" type="MeshInstance3D" parent="Player/Turret/TurretMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.35, 0.2)
+mesh = SubResource("CylinderMesh_074og")
+surface_material_override/0 = SubResource("StandardMaterial3D_2cqfq")
+
+[node name="@MeshInstance3D@40129" type="MeshInstance3D" parent="Player/Turret/TurretMesh"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+mesh = SubResource("CylinderMesh_cegan")
+surface_material_override/0 = SubResource("StandardMaterial3D_w48qg")
+
+[node name="@MeshInstance3D@40130" type="MeshInstance3D" parent="Player/Turret/TurretMesh"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0.4, 0.1, -0.5)
+mesh = SubResource("CylinderMesh_82xsv")
+surface_material_override/0 = SubResource("StandardMaterial3D_w48qg")
 
 [node name="SpringArm3D" type="SpringArm3D" parent="Player/Turret"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.43901, 0.5, 0)
 spring_length = 5.0
 
 [node name="Camera3D" type="Camera3D" parent="Player/Turret/SpringArm3D"]
-transform = Transform3D(1, 0, 0, 0, 0.984359, 0.176174, 0, -0.176174, 0.984359, 0, 0.518288, 2.62974)
-fov = 67.6242
+transform = Transform3D(1, 0, 0, 0, 0.955335, 0.295524, 0, -0.295524, 0.955335, 0.0373135, 0.518288, 3.15768)
+fov = 72.4
+
+[node name="BarrelPivot" type="Node3D" parent="Player/Turret"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+
+[node name="TankGunBarrel" type="MeshInstance3D" parent="Player/Turret/BarrelPivot"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, -0.23779, -1.3)
+mesh = SubResource("CylinderMesh_getpj")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_ryguw")
 
 [node name="RedBox" parent="." instance=ExtResource("3_defgh")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -9.10316)
 
 [node name="UILayer" parent="." instance=ExtResource("2_abcde")]
