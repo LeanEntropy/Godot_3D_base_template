@@ -29,8 +29,6 @@ var player_mesh: MeshInstance3D
 var selection_ring: MeshInstance3D
 var tank_hull: MeshInstance3D
 var turret: Node3D
-var turret_mesh: MeshInstance3D
-var tank_gun_barrel: MeshInstance3D
 
 # Configuration values (loaded from GameConfig)
 var mouse_sensitivity: float
@@ -61,9 +59,7 @@ func initialize(player_node: CharacterBody3D) -> void:
 	player_mesh = player.get_node("PlayerMesh")
 	selection_ring = player.get_node("SelectionRing")
 	turret = player.get_node("Turret")
-	turret_mesh = turret.get_node("TurretMesh")
 	tank_hull = player.get_node("TankHull")
-	tank_gun_barrel = turret.get_node("TankGunBarrel")
 	
 	# Load configuration
 	mouse_sensitivity = GameConfig.mouse_sensitivity
@@ -80,9 +76,8 @@ func initialize(player_node: CharacterBody3D) -> void:
 	# Setup visuals (show player mesh, hide tank parts)
 	if player_mesh: player_mesh.show()
 	if selection_ring: selection_ring.hide()
-	if turret_mesh: turret_mesh.hide()
 	if tank_hull: tank_hull.hide()
-	if tank_gun_barrel: tank_gun_barrel.hide()
+	if turret: turret.hide()  # Hide entire turret node (includes barrel and all tank turret components)
 	
 	Logger.info("OverTheShoulderController initialized successfully")
 

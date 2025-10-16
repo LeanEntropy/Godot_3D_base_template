@@ -173,6 +173,7 @@ func initialize(player_node: CharacterBody3D) -> void:
 	# Visuals
 	player_mesh.hide()
 	tank_hull.show()
+	turret.show()  # Show turret node (includes all turret components and barrel)
 	
 	# Hide selection ring in tank mode
 	var selection_ring = player.get_node_or_null("SelectionRing")
