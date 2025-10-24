@@ -31,6 +31,15 @@ func launch(launch_direction: Vector3, launch_speed: float = 30.0) -> void:
 	direction = launch_direction.normalized()
 	speed = launch_speed
 	linear_velocity = direction * speed
+
+	# Exclude player from collision to prevent self-hit
+	var player = get_tree().get_first_node_in_group("player")
+	if player:
+		add_collision_exception_with(player)
+		Logger.info("Projectile: Added collision exception for player")
+	else:
+		Logger.warning("Projectile: Player not found in 'player' group")
+
 	Logger.info("Projectile launched: direction=" + str(direction) + " velocity=" + str(linear_velocity))
 
 func _on_body_entered(body: Node) -> void:
