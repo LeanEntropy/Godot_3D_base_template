@@ -27,10 +27,11 @@ func _ready() -> void:
 		Logger.info("Projectile despawning after lifetime")
 		queue_free()
 
-func launch(launch_direction: Vector3, launch_speed: float = 30.0) -> void:
+func launch(launch_direction: Vector3, launch_speed: float = 30.0, launch_gravity_scale: float = 0.15) -> void:
 	direction = launch_direction.normalized()
 	speed = launch_speed
 	linear_velocity = direction * speed
+	gravity_scale = launch_gravity_scale  # Apply gravity for arc trajectory
 
 	# Exclude player from collision to prevent self-hit
 	var player = get_tree().get_first_node_in_group("player")
@@ -40,19 +41,24 @@ func launch(launch_direction: Vector3, launch_speed: float = 30.0) -> void:
 	else:
 		Logger.warning("Projectile: Player not found in 'player' group")
 
-	Logger.info("Projectile launched: direction=" + str(direction) + " velocity=" + str(linear_velocity))
+	Logger.info("Projectile launched: direction=" + str(direction) + " velocity=" + str(linear_velocity) + " gravity_scale=" + str(gravity_scale))
 
 func _on_body_entered(body: Node) -> void:
 	Logger.info("Projectile hit: " + body.name)
-	
+
+	# STOP MOTION IMMEDIATELY to prevent bouncing/sliding
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
+	freeze = true  # Freeze physics to ensure no movement
+
 	# Create hit effect at impact point
 	var hit_effect = HitEffectScene.instantiate()
 	get_tree().root.add_child(hit_effect)
 	hit_effect.global_position = global_position
-	
+
 	# Deal damage
 	if body.has_method("take_damage"):
 		body.take_damage(damage)
-	
+
 	# Destroy projectile
 	queue_free()

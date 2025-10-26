@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8yay102a3b4c"]
+
+[ext_resource type="Script" path="res://code/UI/aim_cursor.gd" id="1_aim_cursor"]
+
+[node name="AimCursor" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_aim_cursor")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="ColorRect" type="ColorRect" parent="CenterContainer"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+color = Color(0, 1, 1, 0.8)
+
+[node name="OuterRing" type="ColorRect" parent="CenterContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+color = Color(0, 1, 1, 0.3)
+
+[node name="CenterDot" type="ColorRect" parent="CenterContainer"]
+custom_minimum_size = Vector2(4, 4)
+layout_mode = 2
+color = Color(1, 1, 1, 1)
