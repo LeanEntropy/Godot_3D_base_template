@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqwx80a00abc3"]
+
+[sub_resource type="CylinderMesh" id="2"]
+top_radius = 0.03
+bottom_radius = 0.03
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="1"]
+albedo_color = Color(1, 0, 1, 1)
+
+[node name="DebugBarrel" type="Node3D"]
+
+[node name="Barrel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -0.2)
+mesh = SubResource("2")
+surface_material_override/0 = SubResource("1")
+
+[node name="Muzzle" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.4)

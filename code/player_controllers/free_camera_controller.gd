@@ -1,34 +1,26 @@
 extends Node
-# Free Camera Controller - RTS-style camera with click-to-select and move
+# Free Camera Controller - Orbit camera for observation and debugging
 #
-# This controller provides RTS-style gameplay with the following features:
-# - Camera: Free-moving camera controlled by WASD, independent of player
-# - Movement: Click to select player, click to move (RTS pattern)
-# - Input: Right-click and drag for camera look, mouse wheel zoom
+# This controller provides an orbiting camera with the following features:
+# - Camera: Orbits around player at fixed distance, always looking at player
+# - Movement: Right-click drag to orbit, mouse wheel to zoom
+# - Input: Camera stays parallel to ground, WASD moves player (optional)
 #
 # Required Player Scene Structure:
-# - Player/Turret/SpringArm3D/Camera3D
+# - Player/ObserverCamera (Camera3D)
 # - Player/PlayerMesh (MeshInstance3D)
 # - Player/SelectionRing (MeshInstance3D)
 # - Player/TankHull (Node3D)
 # - Player/Turret (Node3D)
 #
 # Configuration Parameters Used:
-# - physics.camera_speed - Camera movement speed
-# - physics.character_speed - Player movement speed
-# - physics.gravity - Gravity force
-# - physics.lerp_weight - Movement smoothing
-# - physics.zoom_speed - Camera zoom speed
-# - physics.min_zoom - Minimum camera distance
-# - physics.max_zoom - Maximum camera distance
-# - physics.default_zoom - Starting camera distance
-
-const DestinationMarker = preload("res://assets/destination_marker.tscn")
+# - free_camera.movement_speed - Player movement speed (optional)
+# - free_camera.mouse_sensitivity - Orbit rotation sensitivity
+# - free_camera.fov - Camera field of view
 
 # Player references
 var player: CharacterBody3D
 var camera: Camera3D
-var spring_arm: SpringArm3D
 
 # Visual elements
 var player_mesh: MeshInstance3D
@@ -37,67 +29,73 @@ var tank_hull: MeshInstance3D
 var turret: Node3D
 
 # Configuration values (loaded from GameConfig)
-var camera_speed: float
-var character_speed: float
+var movement_speed: float
+var mouse_sensitivity: float
 var gravity: float
-var lerp_weight: float
-var zoom_speed: float
-var min_zoom: float
-var max_zoom: float
-var default_zoom: float
 
-# Controller state
+# Orbit camera state
 var is_active: bool = false
-var is_player_selected: bool = false
-var target_position: Vector3
+var orbit_distance: float = 10.0  # Current distance from player
+var orbit_angle: float = 45.0  # Horizontal angle (degrees)
+var min_distance: float = 3.0
+var max_distance: float = 30.0
+var zoom_speed: float = 1.0
+
+# Input state
+var is_orbiting: bool = false
 
 func initialize(player_node: CharacterBody3D) -> void:
-	Logger.info("FreeCameraController initializing...")
-	
+	Logger.info("FreeCameraController (Orbit Mode) initializing...")
+
 	# Validate player node
 	if player_node == null:
 		Logger.error("FreeCameraController: Player node is null!")
 		return
-	
+
 	player = player_node
 	is_active = true
-	target_position = player.global_transform.origin
-	
-	# Get and validate node references
-	if not player.has_node("Turret/SpringArm3D/Camera3D"):
-		Logger.error("FreeCameraController: Missing Camera3D node!")
+
+	# Get and validate ObserverCamera
+	camera = player.get_node_or_null("ObserverCamera")
+	if not camera:
+		Logger.error("FreeCameraController: Missing ObserverCamera node!")
 		return
-	camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	spring_arm = player.get_node("Turret/SpringArm3D")
-	player_mesh = player.get_node("PlayerMesh")
-	selection_ring = player.get_node("SelectionRing")
-	turret = player.get_node("Turret")
-	tank_hull = player.get_node("TankHull")
-	
-	# Load configuration
-	camera_speed = GameConfig.camera_speed
-	character_speed = GameConfig.character_speed
-	gravity = GameConfig.gravity
-	lerp_weight = GameConfig.lerp_weight
-	zoom_speed = GameConfig.zoom_speed
-	min_zoom = GameConfig.min_zoom
-	max_zoom = GameConfig.max_zoom
-	default_zoom = GameConfig.default_zoom
-	
-	# Setup camera for free camera mode
-	spring_arm.spring_length = 15.0
-	spring_arm.position = Vector3.ZERO
-	spring_arm.top_level = true  # Camera independent of player rotation
+
+	# Get visual elements
+	player_mesh = player.get_node_or_null("PlayerMesh")
+	selection_ring = player.get_node_or_null("SelectionRing")
+	turret = player.get_node_or_null("Turret")
+	tank_hull = player.get_node_or_null("TankHull")
+
+	# Load configuration from [free_camera] section
+	movement_speed = GameConfig.get_value("free_camera", "movement_speed", 5.0)
+	mouse_sensitivity = GameConfig.get_value("free_camera", "mouse_sensitivity", 0.002)
+	gravity = GameConfig.get_value("global", "gravity", 9.8)
+
+	# Setup camera for orbit mode
+	camera.current = true
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	camera.fov = default_zoom
-	
+	camera.fov = GameConfig.get_value("free_camera", "fov", 75.0)
+
+	# Position camera at initial orbit position
+	_update_camera_position()
+
+	# Deactivate other cameras
+	var player_camera = player.get_node_or_null("PlayerCamera/SpringArm3D/Camera3D")
+	if player_camera:
+		player_camera.current = false
+
+	var tank_camera = player.get_node_or_null("Turret/SpringArm3D/TankCamera")
+	if tank_camera:
+		tank_camera.current = false
+
 	# Setup visuals (show player mesh, hide tank parts)
 	if player_mesh: player_mesh.show()
-	if selection_ring: selection_ring.hide()  # Show when selected
+	if selection_ring: selection_ring.hide()
 	if tank_hull: tank_hull.hide()
 	if turret: turret.hide()  # Hide entire turret node (includes barrel and all tank turret components)
-	
-	Logger.info("FreeCameraController initialized successfully")
+
+	Logger.info("FreeCameraController (Orbit Mode) initialized successfully")
 
 func _ready() -> void:
 	pass
@@ -105,111 +103,133 @@ func _ready() -> void:
 func handle_input(event: InputEvent) -> void:
 	if not is_active:
 		return
-	
-	# Mouse motion handling
-	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
-		_handle_mouse_motion(event)
-	
-	# Mouse button handling
+	if not camera:
+		return
+
+	# Right mouse button drag for orbiting
 	if event is InputEventMouseButton:
-		_handle_mouse_button(event)
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			if event.pressed:
+				is_orbiting = true
+				Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+			else:
+				is_orbiting = false
+				Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
-func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
-	spring_arm.rotate_y(-event.relative.x * GameConfig.mouse_sensitivity)
-	spring_arm.rotate_x(-event.relative.y * GameConfig.mouse_sensitivity)
-	spring_arm.rotation.x = clamp(spring_arm.rotation.x, -PI/2, PI/2)
+	# Mouse wheel for zoom
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			orbit_distance = clamp(orbit_distance - zoom_speed, min_distance, max_distance)
+			_update_camera_position()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			orbit_distance = clamp(orbit_distance + zoom_speed, min_distance, max_distance)
+			_update_camera_position()
 
-func _handle_mouse_button(event: InputEventMouseButton) -> void:
-	# Zoom controls
-	if Input.is_action_just_pressed("zoom_in"):
-		spring_arm.spring_length = clamp(spring_arm.spring_length - zoom_speed, min_zoom, max_zoom)
-	if Input.is_action_just_pressed("zoom_out"):
-		spring_arm.spring_length = clamp(spring_arm.spring_length + zoom_speed, min_zoom, max_zoom)
-	
-	# Camera look controls (right mouse button)
-	if event.is_action("ui_mouse_right"):
-		if event.is_pressed():
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	
-	# Selection and movement (left mouse button)
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		_handle_left_click(event.position)
+	# Mouse motion for orbit rotation (only when right mouse button is held)
+	if event is InputEventMouseMotion and is_orbiting:
+		_handle_orbit_rotation(event)
 
-func _handle_left_click(mouse_pos: Vector2) -> void:
-	var ray_length: float = 1000
-	var from: Vector3 = camera.project_ray_origin(mouse_pos)
-	var to: Vector3 = from + camera.project_ray_normal(mouse_pos) * ray_length
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(from, to)
-	var result: Dictionary = player.get_world_3d().direct_space_state.intersect_ray(query)
-	
-	if result:
-		var collider = result.collider
-		if collider == player:
-			# Player clicked - select
-			is_player_selected = true
-			selection_ring.show()
-			target_position = player.global_position
-		elif is_player_selected:
-			# Ground clicked while player selected - move
-			target_position = result.position
-			var marker = DestinationMarker.instantiate()
-			player.get_parent().add_child(marker)
-			marker.global_position = target_position
-			if marker.has_node("AnimationPlayer"):
-				marker.get_node("AnimationPlayer").connect("animation_finished", Callable(marker, "queue_free"))
-		else:
-			# Clicked elsewhere - deselect
-			is_player_selected = false
-			selection_ring.hide()
+func _handle_orbit_rotation(event: InputEventMouseMotion) -> void:
+	# Rotate orbit angle based on horizontal mouse movement
+	orbit_angle -= event.relative.x * mouse_sensitivity * 50.0  # Scale for degrees
+
+	# Keep angle in 0-360 range
+	if orbit_angle < 0:
+		orbit_angle += 360
+	elif orbit_angle >= 360:
+		orbit_angle -= 360
+
+	_update_camera_position()
+
+func _update_camera_position() -> void:
+	"""Position camera in orbit around player, always looking at player, parallel to ground"""
+	if not camera or not player:
+		return
+
+	# Convert angle to radians
+	var angle_rad: float = deg_to_rad(orbit_angle)
+
+	# Calculate orbit position (parallel to ground - only XZ rotation)
+	var offset: Vector3 = Vector3(
+		sin(angle_rad) * orbit_distance,
+		orbit_distance * 0.4,  # Fixed height above player (40% of distance)
+		cos(angle_rad) * orbit_distance
+	)
+
+	# Position camera
+	camera.global_position = player.global_position + offset
+
+	# Always look at player
+	camera.look_at(player.global_position, Vector3.UP)
 
 func handle_physics(delta: float) -> void:
 	if not is_active:
 		return
-	
-	# Move camera with WASD
-	_handle_camera_movement(delta)
-	
-	# Apply gravity to player
+	if not camera:
+		return
+
+	# ========================================
+	# CAMERA UPDATE - Follow player in orbit
+	# ========================================
+	_update_camera_position()
+
+	# ========================================
+	# PLAYER MOVEMENT - Optional WASD control
+	# ========================================
+	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+
+	if input_dir != Vector2.ZERO:
+		# Calculate movement direction relative to current camera view (screen-relative)
+		var forward: Vector3 = -camera.global_transform.basis.z
+		var right: Vector3 = camera.global_transform.basis.x
+
+		# Flatten to horizontal plane
+		forward.y = 0
+		right.y = 0
+		forward = forward.normalized()
+		right = right.normalized()
+
+		var move_direction: Vector3 = (forward * -input_dir.y + right * input_dir.x).normalized()
+
+		# Apply movement
+		player.velocity.x = move_direction.x * movement_speed
+		player.velocity.z = move_direction.z * movement_speed
+	else:
+		# Stop horizontal movement
+		player.velocity.x = 0
+		player.velocity.z = 0
+
+	# Apply gravity
 	if not player.is_on_floor():
 		player.velocity.y -= gravity * delta
-	
-	# Move player if selected and has target
-	_handle_player_movement(delta)
-	
-	# Execute player movement
+
+	# Move player
 	player.move_and_slide()
 
-func _handle_camera_movement(delta: float) -> void:
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	var direction: Vector3 = (spring_arm.transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-	spring_arm.global_position += direction * camera_speed * delta
+	# ========================================
+	# CRITICAL: Lock player rotation to zero
+	# ========================================
+	player.rotation = Vector3.ZERO
 
-func _handle_player_movement(delta: float) -> void:
-	if is_player_selected:
-		var current_pos: Vector3 = player.global_position
-		var move_direction: Vector3 = (target_position - current_pos).normalized()
-		var target_velocity: Vector3 = Vector3.ZERO
-		
-		if current_pos.distance_to(target_position) > 0.5:
-			target_velocity = move_direction * character_speed
-			player.look_at(Vector3(target_position.x, current_pos.y, target_position.z))
-		
-		player.velocity.x = lerp(player.velocity.x, target_velocity.x, lerp_weight * delta)
-		player.velocity.z = lerp(player.velocity.z, target_velocity.z, lerp_weight * delta)
-	else:
-		player.velocity.x = lerp(player.velocity.x, 0.0, lerp_weight * delta)
-		player.velocity.z = lerp(player.velocity.z, 0.0, lerp_weight * delta)
-
-func _calculate_movement_direction(input_dir: Vector2) -> Vector3:
-	# Not used in this controller - movement handled by camera and selection
-	return Vector3.ZERO
+	# ========================================
+	# DIAGNOSTIC: Print every 120 frames
+	# ========================================
+	if Engine.get_frames_drawn() % 120 == 0:
+		Logger.info("=== FREE CAMERA ORBIT DIAGNOSTIC ===")
+		Logger.info("Orbit angle: " + str(orbit_angle))
+		Logger.info("Orbit distance: " + str(orbit_distance))
+		Logger.info("Camera position: " + str(camera.global_position))
+		Logger.info("Player position: " + str(player.global_position))
+		Logger.info("Player rotation: " + str(player.rotation_degrees))
+		Logger.info("===================================")
 
 func cleanup() -> void:
 	"""Called when switching to a different controller"""
 	is_active = false
-	is_player_selected = false
-	if selection_ring:
-		selection_ring.hide()
+
+	# Restore mouse mode if we were orbiting
+	if is_orbiting:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		is_orbiting = false
+
 	Logger.info("FreeCameraController cleaned up")

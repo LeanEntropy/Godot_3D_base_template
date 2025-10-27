@@ -29,7 +29,7 @@ func update_crosshair_visibility():
 		return
 	
 	# Get control mode from cached config
-	var control_mode = config.get_value("camera", "control_mode", "first_person")
+	var control_mode = config.get_value("global", "controller_mode", "first_person")
 	
 	var supported_modes = ["first_person", "third_person_follow", "over_the_shoulder", "top_down", "tank"]
 	
@@ -56,7 +56,7 @@ func _process(delta):
 			fire_timer = 0.0
 	
 	# Update aiming marker for tank mode
-	var control_mode = config.get_value("camera", "control_mode", "first_person")
+	var control_mode = config.get_value("global", "controller_mode", "first_person")
 	if control_mode == "tank":
 		update_tank_aiming_marker()
 	
@@ -81,7 +81,7 @@ func fire_projectile():
 	player.get_parent().add_child(projectile)
 	
 	# Set projectile position and velocity based on control mode
-	var control_mode = config.get_value("camera", "control_mode", "first_person")
+	var control_mode = config.get_value("global", "controller_mode", "first_person")
 	
 	match control_mode:
 		"first_person":

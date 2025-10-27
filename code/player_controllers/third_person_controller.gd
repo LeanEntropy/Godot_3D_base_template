@@ -14,10 +14,10 @@ extends Node
 # - Player/Turret (Node3D)
 #
 # Configuration Parameters Used:
-# - physics.mouse_sensitivity - Mouse look sensitivity
-# - physics.speed - Player movement speed
-# - physics.gravity - Gravity force
-# - physics.lerp_weight - Movement smoothing
+# - third_person.mouse_sensitivity - Mouse look sensitivity
+# - third_person.movement_speed - Player movement speed
+# - third_person.gravity - Gravity force
+# - third_person.lerp_weight - Movement smoothing (uses default if not in config)
 
 # Player references
 var player: CharacterBody3D
@@ -50,34 +50,58 @@ func initialize(player_node: CharacterBody3D) -> void:
 	player = player_node
 	is_active = true
 	
-	# Get and validate node references
-	if not player.has_node("Turret/SpringArm3D/Camera3D"):
-		Logger.error("ThirdPersonController: Missing Camera3D node!")
-		return
-	camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	spring_arm = player.get_node("Turret/SpringArm3D")
+	# Get node references
 	player_mesh = player.get_node("PlayerMesh")
 	selection_ring = player.get_node("SelectionRing")
 	turret = player.get_node("Turret")
 	tank_hull = player.get_node("TankHull")
-	
-	# Load configuration
-	mouse_sensitivity = GameConfig.mouse_sensitivity
-	movement_speed = GameConfig.speed
-	gravity = GameConfig.gravity
-	lerp_weight = GameConfig.lerp_weight
-	
-	# Setup camera
-	spring_arm.spring_length = 5.0
-	spring_arm.position = Vector3.ZERO
-	spring_arm.top_level = false
-	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	
+
+	# Camera management - use PlayerCamera
+	var player_camera_rig = player.get_node_or_null("PlayerCamera")
+	if player_camera_rig:
+		spring_arm = player_camera_rig.get_node_or_null("SpringArm3D")
+		if spring_arm:
+			camera = spring_arm.get_node_or_null("Camera3D")
+			if camera:
+				camera.current = true
+				# Configure for third person
+				spring_arm.spring_length = 5.0  # Behind player
+				spring_arm.position = Vector3(0, 2.0, 0)  # Above player
+				spring_arm.top_level = false
+				camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+				Logger.info("ThirdPersonController: PlayerCamera activated")
+
+	if not camera:
+		Logger.error("ThirdPersonController: Failed to find PlayerCamera!")
+		return
+
+	# Deactivate other cameras
+	var observer_camera = player.get_node_or_null("ObserverCamera")
+	if observer_camera:
+		observer_camera.current = false
+
+	var tank_camera = player.get_node_or_null("Turret/SpringArm3D/TankCamera")
+	if tank_camera:
+		tank_camera.current = false
+
+	# Load configuration from [third_person] section
+	mouse_sensitivity = GameConfig.get_value("third_person", "mouse_sensitivity", 0.002)
+	movement_speed = GameConfig.get_value("third_person", "movement_speed", 5.0)
+	gravity = GameConfig.get_value("third_person", "gravity", 9.8)
+	lerp_weight = 10.0  # Not in config, using default
+
+	# Hide tank visual components (NOT the turret node itself)
+	var turret_mesh = player.get_node_or_null("Turret/TurretMesh")
+	var barrel_pivot = player.get_node_or_null("Turret/BarrelPivot")
+	if turret_mesh:
+		turret_mesh.hide()
+	if barrel_pivot:
+		barrel_pivot.hide()
+
 	# Setup visuals (show player mesh, hide tank parts)
 	if player_mesh: player_mesh.show()
 	if selection_ring: selection_ring.hide()
 	if tank_hull: tank_hull.hide()
-	if turret: turret.hide()  # Hide entire turret node (includes barrel and all tank turret components)
 	
 	Logger.info("ThirdPersonController initialized successfully")
 
@@ -95,7 +119,7 @@ func handle_input(event: InputEvent) -> void:
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 	player.rotate_y(-event.relative.x * mouse_sensitivity)
 	spring_arm.rotate_x(-event.relative.y * mouse_sensitivity)
-	spring_arm.rotation.x = clamp(spring_arm.rotation.x, -PI/2, 0.1)
+	spring_arm.rotation.x = clamp(spring_arm.rotation.x, -1.2, 1.2)  # Match OTS wider range for better aiming
 
 func handle_physics(delta: float) -> void:
 	if not is_active:

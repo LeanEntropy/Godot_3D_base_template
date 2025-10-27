@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6a8g6f8v8x8w"]
+[gd_scene load_steps=4 format=3 uid="uid://c6a8g6f8v8x8w"]
 
 [ext_resource type="Script" path="res://code/UI/ui_layer.gd" id="1_xcyvf"]
+[ext_resource type="PackedScene" uid="uid://bhvjyn2s42pcc" path="res://assets/UI/crosshair.tscn" id="2_crosshair"]
+[ext_resource type="PackedScene" uid="uid://c8x9y1z2a3b4c" path="res://assets/UI/aim_cursor.tscn" id="3_aim_cursor"]
 
 [node name="UILayer" type="CanvasLayer"]
 script = ExtResource("1_xcyvf")
@@ -29,5 +31,9 @@ mouse_filter = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 128
 text = "P A U S E"
+
+[node name="Crosshair" parent="." instance=ExtResource("2_crosshair")]
+
+[node name="AimCursor" parent="." instance=ExtResource("3_aim_cursor")]
 
 [connection signal="pressed" from="MarginContainer/PauseButton" to="." method="_on_PauseButton_pressed"]

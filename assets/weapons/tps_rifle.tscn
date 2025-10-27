@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://cqwx80a00abc2"]
+
+[sub_resource type="BoxMesh" id="2"]
+size = Vector3(0.1, 0.2, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="1"]
+albedo_color = Color(0.25, 0.25, 0.25, 1)
+
+[sub_resource type="CylinderMesh" id="4"]
+top_radius = 0.025
+bottom_radius = 0.025
+height = 0.25
+
+[sub_resource type="StandardMaterial3D" id="3"]
+albedo_color = Color(0.375, 0.375, 0.375, 1)
+
+[node name="TPSRifle" type="Node3D"]
+
+[node name="Body" type="MeshInstance3D" parent="."]
+mesh = SubResource("2")
+surface_material_override/0 = SubResource("1")
+
+[node name="Barrel" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -0.375)
+mesh = SubResource("4")
+surface_material_override/0 = SubResource("3")
+
+[node name="Muzzle" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)

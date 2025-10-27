@@ -7,7 +7,7 @@ extends Node
 # - Input: Mouse look for camera and player rotation, pitch clamping
 #
 # Required Player Scene Structure:
-# - Player/Turret/SpringArm3D/Camera3D
+# - Player/PlayerCamera/SpringArm3D/Camera3D (POV camera for FPS/TPS/OTS)
 # - Player/PlayerMesh (MeshInstance3D) - hidden in FPS mode
 # - Player/SelectionRing (MeshInstance3D)
 # - Player/TankHull (Node3D)
@@ -50,34 +50,58 @@ func initialize(player_node: CharacterBody3D) -> void:
 	player = player_node
 	is_active = true
 	
-	# Get and validate node references
-	if not player.has_node("Turret/SpringArm3D/Camera3D"):
-		Logger.error("FirstPersonController: Missing Camera3D node!")
-		return
-	camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	spring_arm = player.get_node("Turret/SpringArm3D")
+	# Get node references
 	player_mesh = player.get_node("PlayerMesh")
 	selection_ring = player.get_node("SelectionRing")
 	turret = player.get_node("Turret")
 	tank_hull = player.get_node("TankHull")
-	
-	# Load configuration
-	mouse_sensitivity = GameConfig.mouse_sensitivity
-	movement_speed = GameConfig.speed
-	gravity = GameConfig.gravity
-	lerp_weight = GameConfig.lerp_weight
-	
-	# Setup camera for first-person
-	spring_arm.spring_length = 0
-	spring_arm.position = Vector3.ZERO
-	spring_arm.top_level = false
-	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-	
+
+	# Camera management - use PlayerCamera
+	var player_camera_rig = player.get_node_or_null("PlayerCamera")
+	if player_camera_rig:
+		spring_arm = player_camera_rig.get_node_or_null("SpringArm3D")
+		if spring_arm:
+			camera = spring_arm.get_node_or_null("Camera3D")
+			if camera:
+				camera.current = true
+				# Configure for first person
+				spring_arm.spring_length = 0.0  # No distance, at eyes
+				spring_arm.position = Vector3(0, 1.7, 0)  # Eye height
+				spring_arm.top_level = false
+				camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+				Logger.info("FirstPersonController: PlayerCamera activated")
+
+	if not camera:
+		Logger.error("FirstPersonController: Failed to find PlayerCamera!")
+		return
+
+	# Deactivate other cameras
+	var observer_camera = player.get_node_or_null("ObserverCamera")
+	if observer_camera:
+		observer_camera.current = false
+
+	var tank_camera = player.get_node_or_null("Turret/SpringArm3D/TankCamera")
+	if tank_camera:
+		tank_camera.current = false
+
+	# Load configuration from first_person section
+	mouse_sensitivity = GameConfig.get_value("first_person", "mouse_sensitivity", 0.002)
+	movement_speed = GameConfig.get_value("first_person", "movement_speed", 5.0)
+	gravity = GameConfig.get_value("first_person", "gravity", 9.8)
+	lerp_weight = 10.0  # Not in config, using default
+
+	# Hide tank visual components (NOT the turret node itself)
+	var turret_mesh = player.get_node_or_null("Turret/TurretMesh")
+	var barrel_pivot = player.get_node_or_null("Turret/BarrelPivot")
+	if turret_mesh:
+		turret_mesh.hide()
+	if barrel_pivot:
+		barrel_pivot.hide()
+
 	# Setup visuals (hide player mesh - FPS standard, hide tank parts)
-	if player_mesh: player_mesh.hide()  # Intentional: FPS mode hides body (weapon model to be added)
+	if player_mesh: player_mesh.hide()  # Intentional: FPS mode hides body
 	if selection_ring: selection_ring.hide()
 	if tank_hull: tank_hull.hide()
-	if turret: turret.hide()  # Hide entire turret node (includes barrel and all tank turret components)
 	
 	Logger.info("FirstPersonController: Player mesh hidden (FPS standard)")
 	Logger.info("FirstPersonController initialized successfully")

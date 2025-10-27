@@ -14,20 +14,19 @@ extends Node
 # - Player/Turret (Node3D)
 #
 # Configuration Parameters Used:
-# - physics.speed - Player movement speed
-# - physics.gravity - Gravity force
-# - physics.lerp_weight - Movement smoothing
-# - physics.zoom_speed - Camera zoom speed
-# - physics.min_zoom - Minimum camera size
-# - physics.max_zoom - Maximum camera size
-# - physics.default_zoom - Starting camera size
+# - isometric.movement_speed - Player movement speed
+# - isometric.gravity - Gravity force
+# - isometric.lerp_weight - Movement smoothing (uses default if not in config)
+# - isometric.zoom_speed - Camera zoom speed
+# - isometric.min_zoom - Minimum camera size
+# - isometric.max_zoom - Maximum camera size
+# - isometric.default_zoom - Starting camera size
 
 const DestinationMarker = preload("res://assets/destination_marker.tscn")
 
 # Player references
 var player: CharacterBody3D
 var camera: Camera3D
-var spring_arm: SpringArm3D
 
 # Visual elements
 var player_mesh: MeshInstance3D
@@ -43,6 +42,9 @@ var zoom_speed: float
 var min_zoom: float
 var max_zoom: float
 var default_zoom: float
+var camera_distance: float
+var camera_angle_deg: float
+var rotation_angle_deg: float
 
 # Controller state
 var is_active: bool = false
@@ -61,32 +63,38 @@ func initialize(player_node: CharacterBody3D) -> void:
 	target_position = player.global_transform.origin
 	
 	# Get and validate node references
-	if not player.has_node("Turret/SpringArm3D/Camera3D"):
-		Logger.error("IsometricController: Missing Camera3D node!")
+	camera = player.get_node_or_null("ObserverCamera")
+	if not camera:
+		Logger.error("IsometricController: Missing ObserverCamera node!")
 		return
-	camera = player.get_node("Turret/SpringArm3D/Camera3D")
-	spring_arm = player.get_node("Turret/SpringArm3D")
-	player_mesh = player.get_node("PlayerMesh")
-	selection_ring = player.get_node("SelectionRing")
-	turret = player.get_node("Turret")
-	tank_hull = player.get_node("TankHull")
-	
-	# Load configuration
-	movement_speed = GameConfig.speed
-	gravity = GameConfig.gravity
-	lerp_weight = GameConfig.lerp_weight
-	zoom_speed = GameConfig.zoom_speed
-	min_zoom = GameConfig.min_zoom
-	max_zoom = GameConfig.max_zoom
-	default_zoom = GameConfig.default_zoom
-	
+
+	player_mesh = player.get_node_or_null("PlayerMesh")
+	selection_ring = player.get_node_or_null("SelectionRing")
+	turret = player.get_node_or_null("Turret")
+	tank_hull = player.get_node_or_null("TankHull")
+
+	# Load configuration from [isometric] section
+	movement_speed = GameConfig.get_value("isometric", "movement_speed", 6.0)
+	gravity = GameConfig.get_value("isometric", "gravity", 9.8)
+	lerp_weight = 10.0  # Not in config, using default
+	zoom_speed = GameConfig.get_value("isometric", "zoom_speed", 1.0)
+	min_zoom = GameConfig.get_value("isometric", "min_zoom", 5.0)
+	max_zoom = GameConfig.get_value("isometric", "max_zoom", 20.0)
+	default_zoom = GameConfig.get_value("isometric", "default_zoom", 10.0)
+
 	# Setup camera for isometric view
-	spring_arm.spring_length = 20.0
-	spring_arm.position = Vector3.ZERO
-	spring_arm.rotation = Vector3(deg_to_rad(-35.264), deg_to_rad(45), 0)  # Classic isometric angles
-	spring_arm.top_level = true  # Camera doesn't rotate with player
+	camera.current = true
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = default_zoom
+
+	# Position camera at isometric angle
+	camera_distance = GameConfig.get_value("isometric", "camera_distance", 15.0)
+	camera_angle_deg = GameConfig.get_value("isometric", "camera_angle", 45.0)
+	rotation_angle_deg = GameConfig.get_value("isometric", "rotation_angle", 45.0)
+
+	# Calculate isometric position (above and to the side)
+	camera.global_position = player.global_position + Vector3(camera_distance * 0.707, camera_distance, camera_distance * 0.707)
+	camera.look_at(player.global_position)
 	
 	# Setup visuals (show player mesh and selection ring, hide tank parts)
 	if player_mesh: player_mesh.show()
@@ -138,33 +146,66 @@ func _handle_left_click(mouse_pos: Vector2) -> void:
 func handle_physics(delta: float) -> void:
 	if not is_active:
 		return
-	
-	# Apply gravity
-	if not player.is_on_floor():
-		player.velocity.y -= gravity * delta
-	
-	# Update camera position to follow player
-	spring_arm.global_position = player.global_position
-	
-	# Calculate movement toward target
+
+	# ========================================
+	# CAMERA UPDATE - Follow player at isometric angle
+	# ========================================
+	if camera:
+		var camera_offset = Vector3(camera_distance * 0.707, camera_distance, camera_distance * 0.707)
+		var target_camera_pos = player.global_position + camera_offset
+		camera.global_position = camera.global_position.lerp(target_camera_pos, 5.0 * delta)
+		camera.look_at(player.global_position)
+
+	# ========================================
+	# PLAYER MOVEMENT - Move to target (NO ROTATION)
+	# ========================================
 	var direction: Vector3 = _calculate_movement_direction()
-	
+
 	# Apply movement with lerping
 	player.velocity.x = lerp(player.velocity.x, direction.x, lerp_weight * delta)
 	player.velocity.z = lerp(player.velocity.z, direction.z, lerp_weight * delta)
-	
+
+	# Apply gravity
+	if not player.is_on_floor():
+		player.velocity.y -= gravity * delta
+
 	# Execute movement
 	player.move_and_slide()
 
+	# ========================================
+	# CRITICAL: Lock player rotation to zero
+	# ========================================
+	player.rotation = Vector3.ZERO
+
+	# ========================================
+	# ENSURE PLAYER MESH IS VISIBLE
+	# ========================================
+	if player_mesh and not player_mesh.visible:
+		player_mesh.visible = true
+
+	# ========================================
+	# DIAGNOSTIC: Print every 120 frames
+	# ========================================
+	if Engine.get_frames_drawn() % 120 == 0:
+		Logger.info("=== ISOMETRIC DIAGNOSTIC ===")
+		Logger.info("Player position: " + str(player.global_position))
+		Logger.info("Player rotation: " + str(player.rotation_degrees))
+		Logger.info("Camera position: " + str(camera.global_position))
+		if player_mesh:
+			Logger.info("PlayerMesh visible: " + str(player_mesh.visible))
+		Logger.info("========================")
+
 func _calculate_movement_direction() -> Vector3:
+	# Calculate direction to target WITHOUT rotating player
 	var current_position: Vector3 = player.global_position
 	var move_direction: Vector3 = (target_position - current_position).normalized()
 	var target_velocity: Vector3 = Vector3.ZERO
-	
+
+	# Only move if we're not close enough to target
 	if current_position.distance_to(target_position) > 0.1:
 		target_velocity = move_direction * movement_speed
-		player.look_at(Vector3(target_position.x, player.global_position.y, target_position.z))
-	
+	# REMOVED: player.look_at() - this was causing rotation issues
+
 	return target_velocity
 
 func cleanup() -> void:

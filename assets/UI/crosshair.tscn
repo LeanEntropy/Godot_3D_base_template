@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://bhvjyn2s42pcc"]
+
+[ext_resource type="Texture2D" path="res://assets/UI/crosshair.png" id="1_crosshair_texture"]
+
+[node name="Crosshair" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("1_crosshair_texture")
+expand_mode = 1
+stretch_mode = 5

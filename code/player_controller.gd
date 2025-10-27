@@ -17,17 +17,14 @@ func initialize_controller():
 			current_controller.cleanup()
 		current_controller.queue_free()
 		current_controller = null
-	
-	var config = ConfigFile.new()
-	config.load("res://game_config.cfg")
-	var control_mode = config.get_value("camera", "control_mode", "first_person")
-	
-	Logger.info("Initializing player controller in mode: '%s'" % control_mode)
-	
+
+	# Use GameConfig singleton instead of creating new ConfigFile
+	var control_mode = GameConfig.get_value("global", "controller_mode", "first_person")
+
 	match control_mode:
 		"first_person":
 			current_controller = load("res://code/player_controllers/first_person_controller.gd").new()
-		"third_person_follow":
+		"third_person":
 			current_controller = load("res://code/player_controllers/third_person_controller.gd").new()
 		"over_the_shoulder":
 			current_controller = load("res://code/player_controllers/over_the_shoulder_controller.gd").new()
