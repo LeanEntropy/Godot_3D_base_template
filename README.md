@@ -8,6 +8,8 @@ Base code by civax (x: @civaxo, github: @LeanEntropy)
 
 - **7 Controller Modes**: First-person, third-person, over-the-shoulder, tank, free camera, top-down, and isometric
 - **Three-Camera Architecture**: Separate cameras for different control styles prevent conflicts
+- **Scene Management**: Smooth fade transitions with optional animated loading bar
+- **Optional Title Screen**: Configurable splash screen with PLAY button and customizable backgrounds
 - **Optional Shooting System**: Easy-to-enable/disable modular weapon system
 - **Config-Driven Design**: Modify game behavior through `game_config.cfg` without code changes
 - **Component-Based**: Modular, reusable systems (WeaponComponent, ShootingComponent, AimingHelper)
@@ -274,6 +276,229 @@ weapon_model_isometric = "res://assets/weapons/topdown_gun.tscn"
 
 ---
 
+## Title Screen System
+
+The template includes an **optional title screen** that displays when the game starts, pauses gameplay, and shows a PLAY button to begin the game.
+
+### Current Status: DISABLED ⚪
+
+The title screen is currently disabled in `game_config.cfg`. Set `show_title_screen = true` to enable it.
+
+### Features
+
+- **Three Background Modes**:
+  - **Transparent**: Shows game scene through the title screen
+  - **Image**: Custom background image (place at specified path)
+  - **Solid Color**: Configurable color with adjustable opacity
+
+- **Customizable Appearance**:
+  - Button colors (normal, hover, pressed states)
+  - Text colors
+  - Background colors with alpha/opacity control
+
+- **Title Image Support**:
+  - Display custom game title image (`res://assets/UI/GameTitle.png`)
+  - Automatic fallback to text if image is missing
+
+### How to Enable
+
+1. **Edit `game_config.cfg`**:
+   ```ini
+   [title_screen]
+   show_title_screen = true
+   ```
+
+2. **Run the game** - Title screen will display automatically
+
+3. **Click PLAY** - Game begins with proper mouse mode for active controller
+
+### How to Disable
+
+Set in `game_config.cfg`:
+```ini
+[title_screen]
+show_title_screen = false
+```
+
+### Configuration Options
+
+Edit the `[title_screen]` section in `game_config.cfg`:
+
+```ini
+[title_screen]
+show_title_screen = true               # Enable/disable title screen
+have_background = true                 # false = transparent, true = image or color
+
+# Background Image (optional - takes priority over solid color)
+background_image = ""                  # Path to image, e.g., "res://assets/UI/background.png"
+
+# Solid Color Background (used if no image specified)
+background_color = "1A1A2E"            # Hex color (6 digits, no #)
+background_color_opacity = 1.0         # 0.0 (invisible) to 1.0 (solid)
+
+# Button Appearance
+button_color = "16213E"                # Normal button color
+button_hover_color = "0F3460"          # Button color on mouse hover
+button_text_color = "FFFFFF"           # Button text color
+```
+
+### Background Modes
+
+**1. Transparent Background** (Show game scene behind title)
+```ini
+have_background = false
+```
+- Title screen overlays the game scene
+- Game is visible but paused in the background
+- Clean, minimal look
+
+**2. Image Background** (Custom splash screen)
+```ini
+have_background = true
+background_image = "res://assets/UI/my_background.png"
+```
+- Full-screen background image
+- Automatically scales to fit screen
+- Create image at any resolution (1920x1080 recommended)
+
+**3. Solid Color Background** (Simple colored backdrop)
+```ini
+have_background = true
+background_image = ""
+background_color = "1A1A2E"
+background_color_opacity = 0.95
+```
+- Solid color fills the screen
+- Adjustable opacity for semi-transparent effect
+- Use hex color format: "RRGGBB" (no # prefix)
+
+### Adding a Custom Title Image
+
+1. **Create your title image** (PNG format recommended)
+   - Recommended size: 600x200 pixels
+   - Use transparency for non-rectangular logos
+
+2. **Save as**: `assets/UI/GameTitle.png`
+
+3. **Automatic Detection**: The title screen will automatically load this image
+
+4. **Fallback**: If image is missing, displays "GAME TEMPLATE" as text
+
+### Color Format
+
+All colors use **6-digit hex format without the # prefix**:
+- `"FFFFFF"` = White
+- `"000000"` = Black
+- `"FF0000"` = Red
+- `"00FF00"` = Green
+- `"0000FF"` = Blue
+- `"1A1A2E"` = Dark blue-gray (default background)
+
+Use any color picker tool and copy the hex value (without the #).
+
+### How It Works
+
+When enabled:
+1. Game starts with title screen visible and gameplay paused
+2. Mouse cursor is visible for clicking the PLAY button
+3. Player input and physics are disabled
+4. Clicking PLAY:
+   - Unpauses the game
+   - Hides title screen with fade animation
+   - Shows game UI
+   - Enables player controls
+   - Sets appropriate mouse mode for active controller (captured for FPS/tank, visible for top-down)
+
+---
+
+## Scene Management
+
+The template includes a simple scene management system for loading scenes with smooth fade transitions and an optional animated loading bar.
+
+### Features
+
+- **Config-Driven**: Define scene paths in `game_config.cfg`
+- **Fade Transitions**: Smooth black fade between scenes (0.5s default)
+- **Animated Loading Bar**: Optional progress bar during transitions
+- **Error Handling**: Graceful handling of missing scenes
+- **Signal-Based**: Listen for scene change events
+- **Logger Integration**: Automatic logging and timing
+
+### Quick Start
+
+**1. Define scenes in `game_config.cfg`:**
+```ini
+[scenes]
+main_menu = "res://assets/UI/main_menu.tscn"
+level_1 = "res://assets/levels/level_1.tscn"
+level_2 = "res://assets/levels/level_2.tscn"
+```
+
+**2. Change scenes in your code:**
+```gdscript
+# With fade transition and loading bar
+SceneManager.change_scene("level_1")
+
+# Without fade (instant)
+SceneManager.change_scene_instant("main_menu")
+
+# Reload current scene
+SceneManager.reload_current_scene()
+```
+
+### Configuration
+
+Customize the appearance in `game_config.cfg`:
+
+```ini
+[scene_manager]
+fade_duration = 0.5                # Fade in/out duration in seconds
+show_loading_bar = true            # Show animated progress bar
+loading_bar_color = "4A90E2"       # Hex color (blue by default)
+loading_bar_width = 400            # Bar width in pixels
+loading_bar_height = 20            # Bar height in pixels
+```
+
+### Common Use Cases
+
+**Main menu → Game**:
+```gdscript
+func _on_play_button_pressed() -> void:
+    SceneManager.change_scene("level_1")
+```
+
+**Level complete → Next level**:
+```gdscript
+func _on_level_exit_reached() -> void:
+    SceneManager.change_scene("level_2")
+```
+
+**Player death → Restart**:
+```gdscript
+func _on_player_died() -> void:
+    SceneManager.reload_current_scene()
+```
+
+**Quit to menu**:
+```gdscript
+func _on_quit_to_menu_pressed() -> void:
+    get_tree().paused = false  # Unpause if paused
+    SceneManager.change_scene("main_menu")
+```
+
+**Save before scene change**:
+```gdscript
+func _ready() -> void:
+    SceneManager.scene_changing.connect(_on_scene_changing)
+
+func _on_scene_changing(from: String, to: String) -> void:
+    PlayerData.save_state()  # Save player progress
+```
+
+See `docs/project_structure.md` for detailed documentation and architecture.
+
+---
+
 ## Configuration
 
 All game behavior is controlled through `game_config.cfg`. Changes take effect immediately when you restart the scene.
@@ -333,6 +558,9 @@ show_debug_info = false
 Godot_3D_base_template/
 ├── assets/                      # All scene files (.tscn)
 │   ├── UI/                     # User interface scenes
+│   │   ├── ui_layer.tscn            # Main UI and pause menu
+│   │   ├── title_screen.tscn        # Title screen with PLAY button
+│   │   └── GameTitle.png            # Title image (optional)
 │   ├── weapons/                # Weapon model scenes
 │   ├── tank_projectile.tscn    # Projectile scene
 │   └── projectile_hit_effect.tscn
@@ -353,9 +581,11 @@ Godot_3D_base_template/
 │   │   └── isometric_controller.gd
 │   │
 │   ├── UI/                     # UI controllers
-│   │   └── ui_layer.gd
+│   │   ├── ui_layer.gd              # Main UI and pause menu
+│   │   └── title_screen.gd          # Title screen with PLAY button
 │   │
 │   ├── player_controller.gd    # Main controller dispatcher
+│   ├── main.gd                 # Main scene controller
 │   ├── game_config.gd          # Config system (autoload)
 │   ├── logger.gd               # Logging system (autoload)
 │   └── tank_projectile.gd      # Projectile script

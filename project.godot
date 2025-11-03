@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="base_godot_3D"
-run/main_scene="res://main.tscn"
+run/main_scene="res://assets/UI/launcher.tscn"
 config/features=PackedStringArray("4.4")
 config/icon="res://icon.png"
 
@@ -19,6 +19,7 @@ config/icon="res://icon.png"
 
 GameConfig="*res://code/game_config.gd"
 Logger="*res://code/logger.gd"
+SceneManager="*res://code/scene_manager.gd"
 
 [display]
 

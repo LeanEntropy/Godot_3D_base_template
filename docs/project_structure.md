@@ -421,6 +421,474 @@ func _apply_projectile_color() -> void:
 
 ---
 
+## Title Screen System
+
+### Architecture Overview
+
+The title screen is an **optional UI overlay** that appears on game start, pauses gameplay, and requires the player to click PLAY before beginning.
+
+**Key Design Decision**: The title screen uses `PROCESS_MODE_ALWAYS` to remain interactive while the game tree is paused.
+
+### TitleScreen Component
+
+**Location**: `code/UI/title_screen.gd`
+**Type**: CanvasLayer (UI layer)
+**Purpose**: Displays splash screen with PLAY button and manages game start transition
+
+**Key Properties**:
+```gdscript
+signal play_pressed  # Emitted when PLAY button clicked
+
+@onready var background_image: TextureRect
+@onready var background_color: ColorRect
+@onready var play_button: Button
+@onready var title_image: TextureRect
+```
+
+**Lifecycle**:
+```gdscript
+func _ready() -> void:
+    # CRITICAL: Allow UI to process while game tree is paused
+    process_mode = Node.PROCESS_MODE_ALWAYS
+
+    # Make mouse visible for clicking button
+    Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+    # Connect button signal
+    play_button.pressed.connect(_on_play_pressed)
+
+    # Apply config-driven styling
+    _apply_background()
+    _apply_button_colors()
+    _check_title_image()
+
+func _on_play_pressed() -> void:
+    # Emit signal to main scene
+    play_pressed.emit()
+
+    # Fade out with tween animation
+    # Auto-destroy when fade completes
+```
+
+**Background Modes**:
+
+1. **Transparent** (`have_background = false`):
+   - Both background_image and background_color hidden
+   - Game scene visible through title screen
+   - Game is paused but visually present
+
+2. **Image** (`have_background = true`, `background_image` set):
+   - Full-screen background image
+   - Scales to fit using TextureRect stretch modes
+   - Takes priority over solid color
+
+3. **Solid Color** (`have_background = true`, `background_image = ""`):
+   - ColorRect with configurable color and opacity
+   - Uses hex color format: "RRGGBB"
+   - Alpha/opacity range: 0.0 (invisible) to 1.0 (solid)
+
+**Button Styling**:
+- Creates StyleBoxFlat instances dynamically
+- Applies colors from config for normal/hover/pressed states
+- Rounded corners (10px radius)
+- Border highlighting
+
+### Main Scene Integration
+
+**Location**: `code/main.gd`
+**Purpose**: Orchestrates title screen and gameplay state transitions
+
+**Architecture**:
+```gdscript
+extends Node3D
+
+@onready var title_screen: CanvasLayer = $TitleScreen
+@onready var ui_layer: CanvasLayer = $UILayer
+@onready var player: CharacterBody3D = $Player
+
+func _ready() -> void:
+    # Wait for GameConfig to load
+    if not GameConfig.is_loaded:
+        await GameConfig.config_loaded
+
+    # Check if title screen should be shown
+    var show_title: bool = GameConfig.get_value("title_screen", "show_title_screen", false)
+
+    if show_title and title_screen:
+        # TITLE SCREEN PATH
+        title_screen.show_title_screen()
+        title_screen.play_pressed.connect(_on_play_pressed)
+
+        # Pause game tree (freezes gameplay but not UI)
+        get_tree().paused = true
+
+        # Hide game UI during title screen
+        ui_layer.visible = false
+
+        # Disable player input and physics
+        player.set_process_input(false)
+        player.set_physics_process(false)
+
+        # Make mouse visible for clicking PLAY
+        Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+    else:
+        # NO TITLE SCREEN PATH
+        title_screen.visible = false
+
+        # CRITICAL: Set mouse mode for active controller
+        _set_mouse_mode_for_controller()
+
+        _start_game()
+
+func _on_play_pressed() -> void:
+    # Unpause game tree
+    get_tree().paused = false
+
+    # Show game UI
+    ui_layer.visible = true
+
+    # Enable player controls
+    player.set_process_input(true)
+    player.set_physics_process(true)
+
+    # Set appropriate mouse mode for controller
+    _set_mouse_mode_for_controller()
+
+    _start_game()
+```
+
+### Process Modes Explained
+
+**Problem**: When `get_tree().paused = true`, by default all nodes stop processing input and physics.
+
+**Solution**: Set `process_mode = Node.PROCESS_MODE_ALWAYS` on TitleScreen.
+
+**Process Mode Options**:
+| Mode | Behavior When Tree Paused |
+|------|---------------------------|
+| `PROCESS_MODE_INHERIT` | Inherits from parent (default) |
+| `PROCESS_MODE_PAUSABLE` | Stops processing when paused |
+| `PROCESS_MODE_ALWAYS` | **Continues processing** |
+| `PROCESS_MODE_WHEN_PAUSED` | Only processes when paused |
+| `PROCESS_MODE_DISABLED` | Never processes |
+
+**TitleScreen Usage**:
+```gdscript
+process_mode = Node.PROCESS_MODE_ALWAYS
+```
+This allows the PLAY button to receive input events and call its callback even while `get_tree().paused = true`.
+
+### Mouse Mode Management
+
+**Design Principle**: Different controllers require different mouse modes.
+
+| Controller Mode | Mouse Mode | Reason |
+|----------------|-----------|---------|
+| `first_person`, `third_person`, `over_the_shoulder`, `tank` | `MOUSE_MODE_CAPTURED` | FPS controls need hidden, locked cursor |
+| `top_down`, `isometric`, `free_camera` | `MOUSE_MODE_VISIBLE` | Point-and-click requires visible cursor |
+
+**Implementation** (code/main.gd:79-98):
+```gdscript
+func _set_mouse_mode_for_controller() -> void:
+    var control_mode = GameConfig.get_value("global", "controller_mode", "first_person")
+
+    var captured_modes = ["first_person", "third_person", "over_the_shoulder", "tank"]
+    var visible_modes = ["isometric", "free_camera", "top_down"]
+
+    if control_mode in captured_modes:
+        Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+    elif control_mode in visible_modes:
+        Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+    else:
+        Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)  # Default
+```
+
+**Critical Call Sites**:
+1. When starting game **without** title screen (line 47)
+2. After PLAY button clicked (line 74)
+
+This ensures the mouse is always in the correct state for the active controller.
+
+### Configuration
+
+**Section**: `[title_screen]` in `game_config.cfg`
+
+```ini
+[title_screen]
+show_title_screen = false              # Master enable/disable
+have_background = false                # Transparent vs. image/color
+background_image = ""                  # Path to background PNG (optional)
+background_color = "1A1A2E"            # Hex color (6 digits, no #)
+background_color_opacity = 1.0         # 0.0-1.0 alpha value
+button_color = "16213E"                # Normal state
+button_hover_color = "0F3460"          # Hover state
+button_text_color = "FFFFFF"           # Text color
+```
+
+**Configuration Flow**:
+```
+GameConfig loads game_config.cfg
+    ↓
+main.gd reads [title_screen] section
+    ↓
+If show_title_screen = true:
+    title_screen.gd reads [title_screen] for styling
+    Applies background mode
+    Applies button colors
+    Loads GameTitle.png if exists
+```
+
+### Title Image System
+
+**Expected Path**: `res://assets/UI/GameTitle.png`
+**Recommended Size**: 600x200 pixels (width x height)
+**Format**: PNG with transparency support
+
+**Load Behavior**:
+```gdscript
+func _check_title_image() -> void:
+    var image_path = "res://assets/UI/GameTitle.png"
+
+    if ResourceLoader.exists(image_path):
+        var texture = load(image_path)
+        title_image.texture = texture
+    else:
+        _show_fallback_title()  # Creates Label with "GAME TEMPLATE" text
+```
+
+**Fallback Behavior**:
+- If GameTitle.png missing, creates Label dynamically
+- Text: "GAME TEMPLATE"
+- Font size: 72
+- Shadow effect for visibility
+
+### Signal Flow Diagram
+
+```
+Game Start
+    ↓
+main.gd._ready()
+├─> Check show_title_screen config
+│
+├─> IF TRUE:
+│   ├─> title_screen.show_title_screen()
+│   ├─> get_tree().paused = true
+│   ├─> Hide UILayer
+│   ├─> Disable player input/physics
+│   └─> Connect play_pressed signal
+│       │
+│       └─> User Clicks PLAY
+│           ├─> title_screen._on_play_pressed()
+│           ├─> Emit play_pressed signal
+│           ├─> Fade out animation
+│           └─> main._on_play_pressed()
+│               ├─> get_tree().paused = false
+│               ├─> Show UILayer
+│               ├─> Enable player input/physics
+│               ├─> Set mouse mode for controller
+│               └─> Start game
+│
+└─> IF FALSE:
+    ├─> Hide title_screen
+    ├─> Set mouse mode for controller
+    └─> Start game immediately
+```
+
+### Design Patterns Used
+
+1. **Signal-Based Communication**:
+   - TitleScreen emits `play_pressed` signal
+   - Main scene connects to signal and handles transition
+   - Loose coupling between UI and game logic
+
+2. **Config-Driven Styling**:
+   - All visual parameters in game_config.cfg
+   - No hardcoded colors or dimensions
+   - Easy customization without code changes
+
+3. **Process Mode Architecture**:
+   - UI continues processing during pause
+   - Game logic frozen during title screen
+   - Clean separation of concerns
+
+4. **Tween Animation**:
+   - Smooth fade-out effect on PLAY click
+   - Auto-cleanup with `queue_free()`
+   - Professional transition feel
+
+---
+
+## Scene Management System
+
+### Architecture Overview
+
+The scene management system provides simple scene loading with fade transitions and an optional animated loading bar using a single autoload singleton.
+
+**Design Philosophy**: Minimal, essential functionality appropriate for a template. No async loading, no complex loading screens—just smooth transitions.
+
+### SceneManager (Autoload)
+
+**Location**: `code/scene_manager.gd`
+**Type**: Autoload singleton
+**Purpose**: Centralized scene changing with fade transitions and loading bar
+
+**Key Components**:
+- Scene path registry (from GameConfig `[scenes]` section)
+- Fade overlay (internal ColorRect)
+- Loading bar (internal ProgressBar) - optional
+- Transition state management
+- Signal-based communication
+
+**Public API**:
+```gdscript
+# Scene changing
+func change_scene(scene_key: String) -> void
+func change_scene_instant(scene_key: String) -> void
+func reload_current_scene() -> void
+
+# Utilities
+func get_scene_path(scene_key: String) -> String
+func is_transitioning() -> bool
+```
+
+**Signals**:
+```gdscript
+signal scene_changing(from_scene: String, to_scene: String)
+signal scene_changed(scene_name: String)
+```
+
+### Internal Architecture
+
+**Fade Overlay**:
+- ColorRect child of SceneManager
+- Full screen, black, z_index=1000
+- Tween animations for smooth fade
+- Duration configurable via `fade_duration`
+
+**Loading Bar**:
+- ProgressBar inside CenterContainer
+- Centered on screen, z_index=1001 (above fade)
+- Animates 0→70% during scene load, 70→100% after
+- Styled with config-driven color and size
+- Can be disabled via `show_loading_bar = false`
+
+**Loading Bar Styling**:
+- Background: Dark gray with border
+- Fill: Configurable color (default: blue #4A90E2)
+- Rounded corners for polish
+- Custom size via width/height config
+
+### Transition Flow
+
+```
+User calls: SceneManager.change_scene("level_1")
+    ↓
+Validate scene key exists in config
+    ↓
+Emit scene_changing signal
+    ↓
+Fade out (0.5s tween to black)
+    ↓
+Show loading bar (if enabled)
+    ↓
+Animate loading bar 0→70% (0.35s)
+    ↓
+Call get_tree().change_scene_to_file(path)
+    ↓
+Wait one frame for scene to load
+    ↓
+Animate loading bar 70→100% (0.15s)
+    ↓
+Hide loading bar
+    ↓
+Fade in (0.5s tween to transparent)
+    ↓
+Emit scene_changed signal
+```
+
+### Configuration
+
+**Section**: `[scene_manager]` and `[scenes]` in `game_config.cfg`
+
+```ini
+[scene_manager]
+fade_duration = 0.5                # Fade in/out duration
+show_loading_bar = true            # Show animated progress bar
+loading_bar_color = "4A90E2"       # Hex color for bar
+loading_bar_width = 400            # Bar width in pixels
+loading_bar_height = 20            # Bar height in pixels
+
+[scenes]
+main_game = "res://main.tscn"
+main_menu = "res://assets/UI/main_menu.tscn"
+level_1 = "res://assets/levels/level_1.tscn"
+```
+
+**Naming Convention**: Use descriptive keys (`main_menu`, `level_1`) not filenames.
+
+### Usage Examples
+
+**Basic scene change**:
+```gdscript
+func _on_play_button_pressed() -> void:
+    SceneManager.change_scene("level_1")
+```
+
+**Instant scene change (no fade)**:
+```gdscript
+func _on_quick_restart_pressed() -> void:
+    SceneManager.change_scene_instant("level_1")
+```
+
+**Reload current scene**:
+```gdscript
+func _on_restart_button_pressed() -> void:
+    SceneManager.reload_current_scene()
+```
+
+**Listen for scene changes**:
+```gdscript
+func _ready() -> void:
+    SceneManager.scene_changing.connect(_on_scene_changing)
+    SceneManager.scene_changed.connect(_on_scene_changed)
+
+func _on_scene_changing(from: String, to: String) -> void:
+    # Save player data before transition
+    PlayerData.save_state()
+
+func _on_scene_changed(scene_name: String) -> void:
+    # Initialize new scene
+    Logger.info("Entered scene: " + scene_name)
+```
+
+### Integration with Existing Systems
+
+**GameConfig**: Reads scene paths from `[scenes]` section, loads settings from `[scene_manager]`
+**Logger**: Logs all transitions with timing information using start/end_timer
+**Controllers**: Reinitialize automatically in new scenes, cameras work correctly
+**Title Screen**: Compatible with existing pause/unpause logic, no conflicts
+
+### Error Handling
+
+**Graceful Failures**:
+- Scene key not in config → Log error, stay in current scene
+- Scene file doesn't exist → Log error, stay in current scene
+- Already transitioning → Log warning, ignore duplicate request
+- Scene load fails → Log error, attempt to recover
+
+### Extending the System
+
+This is intentionally minimal for template use. Users can extend with:
+- **Async loading**: Replace `change_scene_to_file()` with `ResourceLoader.load_threaded_*`
+- **Complex loading screens**: Create separate scene with tips, animations
+- **Multiple transitions**: Add slide, zoom, custom effects
+- **Scene history**: Track previous scenes for back buttons
+- **Scene caching**: Preload frequently-used scenes
+
+But they don't pay the complexity cost until needed.
+
+---
+
 ## Configuration System
 
 ### GameConfig Singleton
@@ -469,6 +937,28 @@ weapon_model_first_person = "res://assets/weapons/fps_pistol.tscn"
 
 [ui]  # UI settings
 show_crosshair = true
+
+[title_screen]  # Title screen configuration
+show_title_screen = false
+have_background = false
+background_image = ""
+background_color = "1A1A2E"
+background_color_opacity = 1.0
+button_color = "16213E"
+button_hover_color = "0F3460"
+button_text_color = "FFFFFF"
+
+[scene_manager]  # Scene management configuration
+fade_duration = 0.5
+show_loading_bar = true
+loading_bar_color = "4A90E2"
+loading_bar_width = 400
+loading_bar_height = 20
+
+[scenes]  # Scene path registry
+main_game = "res://main.tscn"
+main_menu = "res://assets/UI/main_menu.tscn"
+level_1 = "res://assets/levels/level_1.tscn"
 ```
 
 ---
@@ -481,6 +971,7 @@ show_crosshair = true
 |------|------|---------|
 | `code/game_config.gd` | Autoload | Global configuration access |
 | `code/logger.gd` | Autoload | Logging and performance monitoring |
+| `code/scene_manager.gd` | Autoload | Scene loading with fade transitions |
 | `code/player_controller.gd` | Script | Controller dispatcher and orchestrator |
 | `main.tscn` | Scene | Main game scene with Player and cameras |
 | `game_config.cfg` | Config | Runtime configuration file |
@@ -522,6 +1013,15 @@ show_crosshair = true
 |------|---------|
 | `code/UI/ui_layer.gd` | UI management, pause menu, mouse mode switching |
 | `assets/UI/ui_layer.tscn` | UI scene with crosshair, pause label, buttons |
+| `code/UI/title_screen.gd` | Title screen controller with PLAY button |
+| `assets/UI/title_screen.tscn` | Title screen scene with button and background |
+| `assets/UI/GameTitle.png` | Optional title image (600x200 recommended) |
+
+### Main Scene Controller
+
+| File | Purpose |
+|------|---------|
+| `code/main.gd` | Main scene orchestrator, manages title screen and game state transitions |
 
 ---
 

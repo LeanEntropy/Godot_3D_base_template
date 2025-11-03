@@ -69,13 +69,20 @@ func _debug_print_weapons_config() -> void:
 	"""Debug function to print all keys loaded from [weapons] section"""
 	Logger.info("=== GameConfig: Debugging config file ===")
 
-	# First, show all sections that were loaded
-	var sections = []
-	for section_name in ["global", "first_person", "third_person", "over_the_shoulder", "tank", "free_camera", "top_down", "isometric", "shooting", "projectile", "weapons", "ui", "controls"]:
-		if config.has_section(section_name):
-			sections.append(section_name)
+	# First, show ALL sections that were loaded (not just hardcoded list)
+	var all_sections = config.get_sections()
+	Logger.info("GameConfig: ALL sections in config file: " + str(all_sections))
 
-	Logger.info("GameConfig: Sections found: " + str(sections))
+	# Also check specifically for the sections we care about
+	Logger.info("GameConfig: Has [scenes] section? " + str(config.has_section("scenes")))
+	if config.has_section("scenes"):
+		var scenes_keys = config.get_section_keys("scenes")
+		Logger.info("GameConfig: Keys in [scenes] section: " + str(scenes_keys))
+		for key in scenes_keys:
+			var value = config.get_value("scenes", key, "NOT_FOUND")
+			Logger.info("GameConfig: [scenes] " + key + " = '" + str(value) + "'")
+	Logger.info("GameConfig: Has [scene_manager] section? " + str(config.has_section("scene_manager")))
+	Logger.info("GameConfig: Has [title_screen] section? " + str(config.has_section("title_screen")))
 
 	if not config.has_section("weapons"):
 		Logger.error("GameConfig: [weapons] section does not exist!")

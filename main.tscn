@@ -1,5 +1,6 @@
-[gd_scene load_steps=34 format=3 uid="uid://bnkcsqjtokxh6"]
+[gd_scene load_steps=35 format=3 uid="uid://bnkcsqjtokxh6"]
 
+[ext_resource type="Script" uid="uid://b0ybpsvtdt3ue" path="res://code/main.gd" id="0_main"]
 [ext_resource type="Script" uid="uid://cknif7bnpg03r" path="res://code/player_controller.gd" id="1_dax7f"]
 [ext_resource type="PackedScene" uid="uid://c6a8g6f8v8x8w" path="res://assets/UI/ui_layer.tscn" id="2_abcde"]
 [ext_resource type="PackedScene" uid="uid://b1h2w3x4y506" path="res://assets/red_box.tscn" id="3_defgh"]
@@ -124,6 +125,7 @@ metallic = 0.6
 roughness = 0.7
 
 [node name="Main" type="Node3D"]
+script = ExtResource("0_main")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("5")
